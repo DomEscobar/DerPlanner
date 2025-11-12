@@ -1,0 +1,18 @@
+# PostgreSQL with pgvector extension for Railway
+FROM pgvector/pgvector:pg16
+
+# Set default environment variables
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=derplanner_task_event_planner
+ENV PGDATA=/var/lib/postgresql/data/pgdata
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
+  CMD pg_isready -U postgres -d derplanner_task_event_planner
+
+# PostgreSQL runs automatically via base image entrypoint
+

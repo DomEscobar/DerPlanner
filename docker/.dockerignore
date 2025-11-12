@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build outputs
+dist/
+server/dist/
+build/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+tests/
+*.test.ts
+*.test.tsx
+coverage/
+
+# Documentation
+README.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+*.md
+.editorconfig
+.prettierrc
+.eslintrc*
+

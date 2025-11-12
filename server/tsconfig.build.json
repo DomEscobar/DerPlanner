@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "src/**/*.test.*"]
+}
