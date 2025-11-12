@@ -7,7 +7,7 @@
 This software is available under two different licenses depending on your use case:
 
 1. **Community License** (this document) - For non-commercial, educational, and open-source use
-2. **Commercial License** - For proprietary and commercial use (contact: admin@derplanner.space)
+2. **Commercial License** - For proprietary and commercial use (contact: d.hueckmann@googlemail.com)
 
 ---
 
