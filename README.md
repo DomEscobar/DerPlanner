@@ -1,9 +1,9 @@
 # ⚡ DerPlanner - The Shareable Task Event Planner
 
 <div align="center">
-  <img width="33%" alt="Sus" src="https://github.com/user-attachments/assets/5d62a2cf-5516-489c-97ad-baf7b4053a5f" />
-  <img width="33%" alt="sus3" src="https://github.com/user-attachments/assets/4ed1e89c-a14a-4a68-ad94-b458cea0e48a" />
-  <img width="33%" alt="sus2" src="https://github.com/user-attachments/assets/87e0a6e6-5317-4bcb-aa3e-ec70d6fe4b2c" />
+  <img width="32%" alt="Sus" src="https://github.com/user-attachments/assets/5d62a2cf-5516-489c-97ad-baf7b4053a5f" />
+  <img width="32%" alt="sus3" src="https://github.com/user-attachments/assets/4ed1e89c-a14a-4a68-ad94-b458cea0e48a" />
+  <img width="32%" alt="sus2" src="https://github.com/user-attachments/assets/87e0a6e6-5317-4bcb-aa3e-ec70d6fe4b2c" />
 </div>
 
 > An AI-powered task management application with real-time chat, event scheduling, intelligent automation, and webhook integrations.
