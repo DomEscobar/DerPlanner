@@ -26,6 +26,136 @@ DerPlanner Task Event Planner is a full-stack web application that helps you man
 
 ---
 
+## 🎯 Use Case: Automated Marketing via Webhook + n8n
+
+DerPlanner's webhook integrations enable powerful automation workflows. Here's a real-world example:
+
+```mermaid
+graph LR
+    A["📋 DerPlanner Task"] -->|Task Completed| B["🔗 Webhook Trigger"]
+    C["📅 DerPlanner Event"] -->|Event Started| B
+    B -->|HTTP POST| D["n8n Workflow Engine"]
+    D -->|Process Event| E{Workflow Logic}
+    E -->|Send Email| F["📧 Email Service"]
+    E -->|Send SMS| G["📱 SMS Service"]
+    E -->|Create Contact| H["👥 CRM System"]
+    E -->|Add to Campaign| I["📊 Marketing Platform"]
+    F --> J["✅ Customer Notified"]
+    G --> J
+    H --> J
+    I --> J
+    
+    style A fill:#e1f5ff
+    style C fill:#e1f5ff
+    style B fill:#fff3e0
+    style D fill:#f3e5f5
+    style J fill:#c8e6c9
+```
+
+**How it works:**
+1. **Task Completion**: When a task is marked complete in DerPlanner, a webhook triggers
+2. **Event Start**: When a scheduled event begins, another webhook fires
+3. **n8n Processing**: The webhook payload reaches your n8n workflow
+4. **Automated Actions**: n8n processes the data and triggers downstream services:
+   - Send customer confirmation emails
+   - Update CRM with new leads
+   - Add contacts to marketing campaigns
+   - Send SMS notifications
+   - Create calendar entries
+   - And much more...
+
+**Example Scenarios:**
+- 📞 **Lead Capture**: Task "Follow up with lead X" → Complete → Webhook → Email sent + CRM updated
+- 🎉 **Event Marketing**: Event "Product Launch" → Starts → Webhook → SMS blast + email campaign triggered
+- 📊 **Analytics**: Task completion → Webhook → Log to analytics platform + Slack notification
+
+---
+
+## 📝 Use Case: Automated Blog Content Calendar with AI Research
+
+Let DerPlanner automate your entire blog publishing pipeline—from deep research to scheduled posts:
+
+```mermaid
+graph TD
+    A["👤 User Request"] -->|"Create 4-week blog schedule"| B["🤖 AI Chat Interface"]
+    B -->|Routes to| C["🔬 Research Agent"]
+    C -->|Deep Research| D["📚 OpenAI o3-deep-research"]
+    D -->|Citation-backed insights| E["✍️ Generate Content"]
+    E -->|Creates planned events| F["📅 Event Calendar"]
+    F -->|Monday 9 AM| G["Event: Publish Post 1"]
+    F -->|Wednesday 9 AM| H["Event: Publish Post 2"]
+    F -->|Friday 9 AM| I["Event: Publish Post 3"]
+    G -->|Scheduled time arrives| J["🔗 Webhook Trigger"]
+    H -->|Scheduled time arrives| J
+    I -->|Scheduled time arrives| J
+    J -->|HTTP POST with content| K{Route to Service}
+    K -->|Option A: n8n| L["n8n Automation Engine"]
+    K -->|Option B: Direct API| M["Blog Platform API"]
+    L -->|Process & Format| N["📤 Post to Platform"]
+    M -->|Direct publish| N
+    N -->|Auto-publish| O["✅ Blog Post Live"]
+    O -->|Sync back| P["📊 Analytics & Feedback"]
+    P -->|Track engagement| F
+    
+    style A fill:#e3f2fd
+    style B fill:#e3f2fd
+    style C fill:#f3e5f5
+    style D fill:#f3e5f5
+    style E fill:#fff3e0
+    style F fill:#e0f2f1
+    style G fill:#e0f2f1
+    style H fill:#e0f2f1
+    style I fill:#e0f2f1
+    style J fill:#fff3e0
+    style L fill:#ede7f6
+    style M fill:#ede7f6
+    style N fill:#c8e6c9
+    style O fill:#c8e6c9
+    style P fill:#b3e5fc
+```
+
+**Workflow Breakdown:**
+
+1. **Natural Request**: "Plan a 4-week blog schedule on AI trends with SEO optimization"
+2. **Deep Research**: 
+   - Research Agent uses OpenAI's o3-deep-research model
+   - Gathers latest insights from across the web
+   - Returns citation-backed, structured content
+3. **Content Planning**:
+   - AI generates blog post outlines with key points
+   - Creates calendar events for publication dates/times
+   - Each event stores content metadata for publishing
+4. **Automated Publishing** (on schedule):
+   - Event trigger fires at scheduled time
+   - Webhook sends content payload
+   - **Option A**: n8n workflow formats, optimizes SEO, and posts to platform
+   - **Option B**: Direct API call to WordPress/Medium/Hashnode/Ghost
+5. **Live & Tracked**: Blog posts go live automatically with analytics sync
+
+**Real Example:**
+```
+User: "Create a 4-week AI trends blog schedule, research the latest developments, 
+and auto-publish every Monday, Wednesday, and Friday at 9 AM to my WordPress blog"
+
+Result:
+✅ Week 1: "Generative AI Breakthroughs" - Mon 9 AM
+✅ Week 1: "Enterprise AI Adoption" - Wed 9 AM  
+✅ Week 1: "AI Ethics & Regulation" - Fri 9 AM
+[... continues for 4 weeks ...]
+
+All content researched, scheduled, and publishing automatically!
+```
+
+**Supported Platforms:**
+- WordPress (via REST API)
+- Medium (via API)
+- Hashnode (via GraphQL)
+- Ghost (via Admin API)
+- Dev.to (via API)
+- Any platform with webhook/API support via n8n
+
+---
+
 ## ✨ Key Features
 
 ### 🎯 Smart Task Management
