@@ -26,6 +26,51 @@ DerPlanner Task Event Planner is a full-stack web application that helps you man
 
 ---
 
+## 🎯 Use Case: Automated Marketing via Webhook + n8n
+
+DerPlanner's webhook integrations enable powerful automation workflows. Here's a real-world example:
+
+```mermaid
+graph LR
+    A["📋 DerPlanner Task"] -->|Task Completed| B["🔗 Webhook Trigger"]
+    C["📅 DerPlanner Event"] -->|Event Started| B
+    B -->|HTTP POST| D["n8n Workflow Engine"]
+    D -->|Process Event| E{Workflow Logic}
+    E -->|Send Email| F["📧 Email Service"]
+    E -->|Send SMS| G["📱 SMS Service"]
+    E -->|Create Contact| H["👥 CRM System"]
+    E -->|Add to Campaign| I["📊 Marketing Platform"]
+    F --> J["✅ Customer Notified"]
+    G --> J
+    H --> J
+    I --> J
+    
+    style A fill:#e1f5ff
+    style C fill:#e1f5ff
+    style B fill:#fff3e0
+    style D fill:#f3e5f5
+    style J fill:#c8e6c9
+```
+
+**How it works:**
+1. **Task Completion**: When a task is marked complete in DerPlanner, a webhook triggers
+2. **Event Start**: When a scheduled event begins, another webhook fires
+3. **n8n Processing**: The webhook payload reaches your n8n workflow
+4. **Automated Actions**: n8n processes the data and triggers downstream services:
+   - Send customer confirmation emails
+   - Update CRM with new leads
+   - Add contacts to marketing campaigns
+   - Send SMS notifications
+   - Create calendar entries
+   - And much more...
+
+**Example Scenarios:**
+- 📞 **Lead Capture**: Task "Follow up with lead X" → Complete → Webhook → Email sent + CRM updated
+- 🎉 **Event Marketing**: Event "Product Launch" → Starts → Webhook → SMS blast + email campaign triggered
+- 📊 **Analytics**: Task completion → Webhook → Log to analytics platform + Slack notification
+
+---
+
 ## ✨ Key Features
 
 ### 🎯 Smart Task Management
