@@ -3,10 +3,11 @@ import { useState, useRef, useCallback } from 'react';
 export interface UseVoiceRecorderOptions {
   onTranscription?: (text: string) => void;
   onError?: (error: string) => void;
+  onPermissionStatus?: (status: 'requesting' | 'denied' | 'error' | 'granted') => void;
 }
 
 export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
-  const { onTranscription, onError } = options;
+  const { onTranscription, onError, onPermissionStatus } = options;
   
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,16 +23,24 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          channelCount: 1,
-          sampleRate: 16000,
-          echoCancellation: true,
-          noiseSuppression: true,
-        } 
-      });
+      let stream = streamRef.current;
       
-      streamRef.current = stream;
+      if (!stream) {
+        onPermissionStatus?.('requesting');
+        
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+          } 
+        });
+        
+        streamRef.current = stream;
+        onPermissionStatus?.('granted');
+      }
+      
       audioChunksRef.current = [];
       recordingStartTimeRef.current = Date.now();
 
@@ -53,9 +62,24 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
     } catch (error) {
       console.error('Error starting recording:', error);
       setIsRecording(false);
-      onError?.('Failed to access microphone. Please check permissions.');
+      
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          onPermissionStatus?.('denied');
+          onError?.('Microphone permission denied. Please enable permissions in your browser settings.');
+        } else if (error.name === 'NotFoundError') {
+          onPermissionStatus?.('error');
+          onError?.('No microphone found. Please check your device.');
+        } else {
+          onPermissionStatus?.('error');
+          onError?.('Failed to access microphone. Please check permissions.');
+        }
+      } else {
+        onPermissionStatus?.('error');
+        onError?.('Failed to access microphone. Please check permissions.');
+      }
     }
-  }, [onError]);
+  }, [onError, onPermissionStatus]);
 
   const stopRecording = useCallback(async () => {
     return new Promise<Blob | null>((resolve) => {
@@ -125,6 +149,49 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
     }
   }, [onTranscription, onError]);
 
+  const requestPermission = useCallback(async () => {
+    try {
+      // If we already have a stream, permission is already granted
+      if (streamRef.current) {
+        onPermissionStatus?.('granted');
+        return;
+      }
+
+      onPermissionStatus?.('requesting');
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+        } 
+      });
+      
+      streamRef.current = stream;
+      onPermissionStatus?.('granted');
+      
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          onPermissionStatus?.('denied');
+          onError?.('Microphone permission denied. Please enable permissions in your browser settings.');
+        } else if (error.name === 'NotFoundError') {
+          onPermissionStatus?.('error');
+          onError?.('No microphone found. Please check your device.');
+        } else {
+          onPermissionStatus?.('error');
+          onError?.('Failed to access microphone. Please check permissions.');
+        }
+      } else {
+        onPermissionStatus?.('error');
+        onError?.('Failed to access microphone. Please check permissions.');
+      }
+    }
+  }, [onError, onPermissionStatus]);
+
   const recordAndTranscribe = useCallback(async (userId: string) => {
     const audioBlob = await stopRecording();
     
@@ -160,6 +227,7 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
     stopRecording,
     recordAndTranscribe,
     cancelRecording,
+    requestPermission,
   };
 };
 

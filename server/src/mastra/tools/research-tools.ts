@@ -24,7 +24,6 @@ export const webResearchTool = createTool({
   inputSchema: z.object({
     query: z.string().describe('The research query or topic to investigate'),
     includeCodeInterpreter: z.boolean().optional().describe('Whether to enable code interpreter for data analysis'),
-    maxToolCalls: z.number().optional().describe('Maximum number of tool calls (web searches) to make. Controls cost and latency.')
   }),
   
   outputSchema: z.object({
@@ -40,7 +39,7 @@ export const webResearchTool = createTool({
   }),
   
   execute: async ({ context }) => {
-    const { query, includeCodeInterpreter, maxToolCalls } = context;
+    const { query, includeCodeInterpreter } = context;
     try {
       console.log(`🔍 Conducting web research: "${query}"`);
       
@@ -52,7 +51,7 @@ export const webResearchTool = createTool({
         query: query,
         useBackgroundMode: false, // Streaming mode for real-time updates
         includeCodeInterpreter: includeCodeInterpreter || false,
-        maxToolCalls: maxToolCalls || 3 // Default to 3 searches for speed
+        maxToolCalls: 3 // Default to 3 searches for speed
       });
       
       console.log(`✅ Research completed with ${result.citations.length} citations`);

@@ -60,7 +60,7 @@ export const MatrixAvatar = ({ compact = false, state = 'idle', onClick }: Matri
     return (
         <motion.div
             className={`overflow-visible ${compact
-                ? "fixed bottom-[4.5rem] right-[40%] translate-x-[60%] md:translate-x-0 md:right-12 w-[120px] h-[150px] pointer-events-auto cursor-pointer group z-30"
+                ? "fixed bottom-[2rem] right-[40%] translate-x-[60%] md:translate-x-0 md:right-12 w-[120px] h-[150px] pointer-events-auto cursor-pointer group z-1"
                 : "absolute  inset-0 flex items-center justify-center pointer-events-none"
                 }`}
             initial={false}
