@@ -142,6 +142,173 @@ export async function conductDeepResearch(
 }
 
 /**
+ * Interface for Web Search request
+ */
+export interface WebSearchRequest {
+  query: string;
+  model?: 'gpt-5' | 'gpt-4o' | 'gpt-4o-mini' | 'o4-mini';
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  allowedDomains?: string[];
+  userLocation?: {
+    country?: string;
+    city?: string;
+    region?: string;
+    timezone?: string;
+  };
+  externalWebAccess?: boolean;
+  includeSources?: boolean;
+}
+
+/**
+ * Interface for Web Search response
+ */
+export interface WebSearchResponse {
+  outputText: string;
+  citations: Array<{
+    url: string;
+    title: string;
+    startIndex: number;
+    endIndex: number;
+  }>;
+  sources?: string[];
+  webSearchCalls: Array<{
+    id: string;
+    status: string;
+    action?: any;
+  }>;
+  status: 'completed' | 'failed';
+  responseId?: string;
+}
+
+/**
+ * Conducts web search using OpenAI's Web Search tool
+ * 
+ * This is faster than deep research and suitable for most queries.
+ * Supports both non-reasoning (fast) and agentic search with reasoning models.
+ * 
+ * @param request - Web search request configuration
+ * @returns Web search response with citations and sources
+ */
+export async function conductWebSearch(
+  request: WebSearchRequest
+): Promise<WebSearchResponse> {
+  const client = getOpenAIClient();
+  
+  console.log(`🔍 [conductWebSearch] Starting with model: ${request.model || 'gpt-4o'}`);
+  console.log(`🔍 [conductWebSearch] Query: "${request.query}"`);
+  const startTime = Date.now();
+  
+  const webSearchTool: any = {
+    type: 'web_search'
+  };
+  
+  if (request.allowedDomains && request.allowedDomains.length > 0) {
+    webSearchTool.filters = {
+      allowed_domains: request.allowedDomains.slice(0, 20)
+    };
+    console.log(`🔍 [conductWebSearch] Domain filters applied: ${request.allowedDomains.length} domains`);
+  }
+  
+  if (request.userLocation) {
+    webSearchTool.user_location = {
+      type: 'approximate',
+      ...request.userLocation
+    };
+    console.log(`🔍 [conductWebSearch] User location set: ${request.userLocation.country || 'custom'}`);
+  }
+  
+  if (request.externalWebAccess !== undefined) {
+    webSearchTool.external_web_access = request.externalWebAccess;
+    console.log(`🔍 [conductWebSearch] External web access: ${request.externalWebAccess}`);
+  }
+
+  const apiRequest: any = {
+    model: request.model || 'gpt-4o',
+    tools: [webSearchTool],
+    tool_choice: 'auto',
+    input: request.query
+  };
+  
+  if (request.reasoningEffort && (request.model === 'gpt-5' || request.model === 'o4-mini')) {
+    apiRequest.reasoning = { effort: request.reasoningEffort };
+    console.log(`🔍 [conductWebSearch] Reasoning effort: ${request.reasoningEffort}`);
+  }
+  
+  if (request.includeSources) {
+    apiRequest.include = ['web_search_call.action.sources'];
+    console.log(`🔍 [conductWebSearch] Sources inclusion enabled`);
+  }
+
+  try {
+    console.log(`📡 [conductWebSearch] Sending request to OpenAI API...`);
+    const apiStartTime = Date.now();
+    const response = await client.responses.create(apiRequest);
+    const apiDuration = Date.now() - apiStartTime;
+    console.log(`⏱️ [conductWebSearch] API response received in ${apiDuration}ms`);
+
+    const citations: WebSearchResponse['citations'] = [];
+    const webSearchCalls: WebSearchResponse['webSearchCalls'] = [];
+    const sources: string[] = [];
+    
+    if (response.output && Array.isArray(response.output)) {
+      console.log(`📊 [conductWebSearch] Processing ${response.output.length} output items`);
+      
+      for (const item of response.output) {
+        if (item.type === 'web_search_call') {
+          const searchAction = (item as any).action?.type || 'unknown';
+          console.log(`   🔎 Web search call detected: ID=${item.id}, action=${searchAction}`);
+          webSearchCalls.push({
+            id: item.id,
+            status: item.status || 'completed',
+            action: (item as any).action
+          });
+          
+          if (request.includeSources && (item as any).action?.sources) {
+            const sourceCount = (item as any).action.sources.length;
+            console.log(`   📎 Sources found: ${sourceCount}`);
+            sources.push(...(item as any).action.sources);
+          }
+        }
+        
+        if (item.type === 'message' && item.content) {
+          console.log(`   💬 Message item with ${item.content.length} content blocks`);
+          for (const content of item.content) {
+            if (content.type === 'output_text' && content.annotations) {
+              const urlCitations = content.annotations.filter(
+                (a: any) => a.type === 'url_citation'
+              );
+              console.log(`      📍 Found ${urlCitations.length} URL citations`);
+              citations.push(...urlCitations as any);
+            }
+          }
+        }
+      }
+    }
+
+    const totalDuration = Date.now() - startTime;
+    console.log(`✅ [conductWebSearch] Completed in ${totalDuration}ms`);
+    console.log(`   📊 Statistics: ${citations.length} citations, ${webSearchCalls.length} searches`);
+    console.log(`   📍 Output length: ${(response.output_text || '').length} chars`);
+
+    return {
+      outputText: response.output_text || '',
+      citations,
+      sources: request.includeSources ? sources : undefined,
+      webSearchCalls,
+      status: 'completed',
+      responseId: response.id
+    };
+    
+  } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    console.error(`❌ [conductWebSearch] Error after ${totalDuration}ms:`, error);
+    throw new Error(
+      `Web search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
  * Enriches a user prompt for better deep research results
  * Uses a faster model (gpt-4.1 or gpt-4o) to expand and clarify the prompt
  */

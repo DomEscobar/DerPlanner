@@ -23,6 +23,7 @@ export {
 export {
   webResearchTool,
   quickResearchTool,
+  deepResearchTool,
   researchTools
 } from './research-tools';
 
