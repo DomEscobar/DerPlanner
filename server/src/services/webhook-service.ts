@@ -1,6 +1,26 @@
 import { query } from '../config/database';
 import { WebhookConfig, TaskWebhookConfig, WebhookLog, TaskWebhookLog } from '../types';
 
+/**
+ * Format date without timezone information
+ * Returns date in format: YYYY-MM-DD HH:MM:SS
+ */
+function formatDateWithoutTimezone(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 export class WebhookService {
   private static instance: WebhookService;
   private pollingInterval: NodeJS.Timeout | null = null;
@@ -146,13 +166,13 @@ export class WebhookService {
           id: eventData.id,
           title: eventData.title,
           description: eventData.description,
-          startDate: eventData.start_date || eventData.startDate,
-          endDate: eventData.end_date || eventData.endDate,
+          startDate: formatDateWithoutTimezone(eventData.start_date || eventData.startDate),
+          endDate: formatDateWithoutTimezone(eventData.end_date || eventData.endDate),
           location: eventData.location,
           type: eventData.type,
           attendees: eventData.attendees,
         },
-        triggeredAt: new Date().toISOString(),
+        triggeredAt: formatDateWithoutTimezone(new Date()),
         retryCount,
       };
       
@@ -418,16 +438,16 @@ export class WebhookService {
           description: taskData.description,
           status: taskData.status,
           priority: taskData.priority,
-          dueDate: taskData.due_date || taskData.dueDate,
+          dueDate: formatDateWithoutTimezone(taskData.due_date || taskData.dueDate),
           tags: taskData.tags,
         },
         event: {
           type: triggerEvent,
           previousStatus,
           newStatus,
-          timestamp: new Date().toISOString(),
+          timestamp: formatDateWithoutTimezone(new Date()),
         },
-        triggeredAt: new Date().toISOString(),
+        triggeredAt: formatDateWithoutTimezone(new Date()),
         retryCount,
       };
       

@@ -4,6 +4,26 @@ import { query } from '../../config/database';
 import { TaskWebhookConfigSchema, WebhookConfigSchema } from '../../types';
 
 /**
+ * Format date without timezone information
+ * Returns date in format: YYYY-MM-DD HH:MM:SS
+ */
+function formatDateWithoutTimezone(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
  * CURL Parser Utility
  * Extracts webhook configuration from CURL commands with robust parsing
  */
@@ -343,7 +363,7 @@ export const configureEventWebhookTool = createTool({
           id: event.id,
           title: event.title,
           webhookEnabled: true,
-          triggerTime: triggerTime.toISOString()
+          triggerTime: formatDateWithoutTimezone(triggerTime)
         },
         message: `Webhook configured for "${event.title}". Will trigger ${triggerOffset ? `${triggerOffset} minutes before` : 'at'} event start.`,
         webhookDetails: {
@@ -530,7 +550,7 @@ export const getWebhookStatusTool = createTool({
       );
       
       const recentLogs = logsResult.rows.map(log => ({
-        triggeredAt: log.triggered_at,
+        triggeredAt: formatDateWithoutTimezone(log.triggered_at),
         success: log.success,
         statusCode: log.response_status,
         error: log.error_message,
@@ -553,7 +573,7 @@ export const getWebhookStatusTool = createTool({
           })
         },
         statistics: {
-          lastTriggered: entity.webhook_last_triggered,
+          lastTriggered: formatDateWithoutTimezone(entity.webhook_last_triggered),
           totalTriggers: entity.webhook_trigger_count,
           recentExecutions: recentLogs.length
         },

@@ -1,6 +1,26 @@
 import webpush from 'web-push';
 import { query } from '../config/database';
 
+/**
+ * Format date without timezone information
+ * Returns date in format: YYYY-MM-DD HH:MM:SS
+ */
+function formatDateWithoutTimezone(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 interface PushSubscription {
   endpoint: string;
   keys: {
@@ -179,7 +199,11 @@ export class PushNotificationService {
         return;
       }
 
-      console.log(`🔍 Checking events for ${subscriptions.length} subscriptions...`);
+      if(subscriptions.length === 1) {
+        console.log(`🔍 Checking events for ${JSON.stringify(subscriptions[0])} `);
+      }else{
+        console.log(`🔍 Checking events for ${subscriptions.length} subscriptions...`);
+      }
 
       // For each subscription, check their events
       for (const sub of subscriptions) {
@@ -252,7 +276,8 @@ export class PushNotificationService {
         data: {
           url: `/?event=${event.id}`,
           eventId: event.id,
-          timestamp: Date.now(),
+          eventStartDate: formatDateWithoutTimezone(event.start_date),
+          timestamp: formatDateWithoutTimezone(new Date()),
         },
       });
 
@@ -307,7 +332,7 @@ export class PushNotificationService {
         requireInteraction: false,
         data: {
           url: '/',
-          timestamp: Date.now(),
+          timestamp: formatDateWithoutTimezone(new Date()),
         },
       });
 
