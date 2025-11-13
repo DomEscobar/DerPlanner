@@ -206,7 +206,6 @@ export async function conductWebSearch(
     webSearchTool.filters = {
       allowed_domains: request.allowedDomains.slice(0, 20)
     };
-    console.log(`🔍 [conductWebSearch] Domain filters applied: ${request.allowedDomains.length} domains`);
   }
   
   if (request.userLocation) {
@@ -214,12 +213,10 @@ export async function conductWebSearch(
       type: 'approximate',
       ...request.userLocation
     };
-    console.log(`🔍 [conductWebSearch] User location set: ${request.userLocation.country || 'custom'}`);
   }
   
   if (request.externalWebAccess !== undefined) {
     webSearchTool.external_web_access = request.externalWebAccess;
-    console.log(`🔍 [conductWebSearch] External web access: ${request.externalWebAccess}`);
   }
 
   const apiRequest: any = {
@@ -251,12 +248,9 @@ export async function conductWebSearch(
     const sources: string[] = [];
     
     if (response.output && Array.isArray(response.output)) {
-      console.log(`📊 [conductWebSearch] Processing ${response.output.length} output items`);
       
       for (const item of response.output) {
         if (item.type === 'web_search_call') {
-          const searchAction = (item as any).action?.type || 'unknown';
-          console.log(`   🔎 Web search call detected: ID=${item.id}, action=${searchAction}`);
           webSearchCalls.push({
             id: item.id,
             status: item.status || 'completed',
@@ -264,31 +258,22 @@ export async function conductWebSearch(
           });
           
           if (request.includeSources && (item as any).action?.sources) {
-            const sourceCount = (item as any).action.sources.length;
-            console.log(`   📎 Sources found: ${sourceCount}`);
             sources.push(...(item as any).action.sources);
           }
         }
         
         if (item.type === 'message' && item.content) {
-          console.log(`   💬 Message item with ${item.content.length} content blocks`);
           for (const content of item.content) {
             if (content.type === 'output_text' && content.annotations) {
               const urlCitations = content.annotations.filter(
                 (a: any) => a.type === 'url_citation'
               );
-              console.log(`      📍 Found ${urlCitations.length} URL citations`);
               citations.push(...urlCitations as any);
             }
           }
         }
       }
     }
-
-    const totalDuration = Date.now() - startTime;
-    console.log(`✅ [conductWebSearch] Completed in ${totalDuration}ms`);
-    console.log(`   📊 Statistics: ${citations.length} citations, ${webSearchCalls.length} searches`);
-    console.log(`   📍 Output length: ${(response.output_text || '').length} chars`);
 
     return {
       outputText: response.output_text || '',
@@ -300,8 +285,6 @@ export async function conductWebSearch(
     };
     
   } catch (error) {
-    const totalDuration = Date.now() - startTime;
-    console.error(`❌ [conductWebSearch] Error after ${totalDuration}ms:`, error);
     throw new Error(
       `Web search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
