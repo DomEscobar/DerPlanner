@@ -7,17 +7,17 @@ import { query } from '../config/database';
  */
 function formatDateWithoutTimezone(date: Date | string | null | undefined): string | null {
   if (!date) return null;
-  
+
   const d = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(d.getTime())) return null;
-  
+
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   const hours = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
   const seconds = String(d.getSeconds()).padStart(2, '0');
-  
+
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
@@ -92,7 +92,7 @@ export class PushNotificationService {
     this.checkInterval = setInterval(() => {
       this.checkUpcomingEvents();
     }, this.CHECK_INTERVAL_MS);
-    
+
     console.log('✅ Push notification service started');
   }
 
@@ -199,17 +199,13 @@ export class PushNotificationService {
         return;
       }
 
-      if(subscriptions.length === 1) {
-        console.log(`🔍 Checking events for ${JSON.stringify(subscriptions[0])} `);
-      }else{
-        console.log(`🔍 Checking events for ${subscriptions.length} subscriptions...`);
-      }
+      console.log(`🔍 Checking events for ${subscriptions.length} subscriptions...`);
 
       // For each subscription, check their events
       for (const sub of subscriptions) {
         const alarmSettings: AlarmSettings = sub.alarm_settings;
         const minutesBefore = alarmSettings.minutesBefore || 15;
-        
+
         // Calculate the time window for notifications
         const notifyTime = new Date(now.getTime() + minutesBefore * 60000);
         const windowStart = new Date(notifyTime.getTime() - 30000); // 30 seconds before
@@ -224,13 +220,13 @@ export class PushNotificationService {
              AND start_date BETWEEN $2 AND $3
              AND (last_notification_sent IS NULL OR last_notification_sent < (start_date - INTERVAL '1 hour'))
            ORDER BY start_date ASC`,
-          [sub.user_id, windowStart, windowEnd]
+          [sub.user_id, windowStart.toISOString(), windowEnd.toISOString()]
         );
 
         // Send notifications for each event
         for (const event of eventsResult.rows) {
           await this.sendEventNotification(sub, event, minutesBefore);
-          
+
           // Mark notification as sent
           await query(
             'UPDATE events SET last_notification_sent = NOW() WHERE id = $1',
@@ -253,8 +249,8 @@ export class PushNotificationService {
   ): Promise<void> {
     try {
       // Parse keys if they're still stringified (PostgreSQL JSONB should auto-parse, but be safe)
-      const keys = typeof subscription.keys === 'string' 
-        ? JSON.parse(subscription.keys) 
+      const keys = typeof subscription.keys === 'string'
+        ? JSON.parse(subscription.keys)
         : subscription.keys;
 
       const pushSubscription: webpush.PushSubscription = {
@@ -262,7 +258,7 @@ export class PushNotificationService {
         keys: keys,
       };
 
-      const timeText = minutesBefore >= 60 
+      const timeText = minutesBefore >= 60
         ? `${Math.floor(minutesBefore / 60)} hour${minutesBefore >= 120 ? 's' : ''}`
         : `${minutesBefore} minutes`;
 
@@ -284,7 +280,7 @@ export class PushNotificationService {
       await webpush.sendNotification(pushSubscription, payload);
 
       console.log(`✅ Sent notification for event: ${event.title} to user: ${subscription.user_id}`);
-      
+
       // Log the notification
       await query(
         `INSERT INTO push_notification_logs (user_id, event_id, subscription_endpoint, payload, success)
@@ -293,13 +289,13 @@ export class PushNotificationService {
       );
     } catch (error: any) {
       console.error(`❌ Error sending push notification for event ${event.id}:`, error.message);
-      
+
       // If subscription is invalid, remove it
       if (error.statusCode === 410 || error.statusCode === 404) {
         console.log(`🗑️  Removing invalid subscription: ${subscription.endpoint}`);
         await this.unsubscribe(subscription.user_id, subscription.endpoint);
       }
-      
+
       // Log the failed notification
       await query(
         `INSERT INTO push_notification_logs (user_id, event_id, subscription_endpoint, payload, success, error_message)
@@ -337,9 +333,9 @@ export class PushNotificationService {
       });
 
       await webpush.sendNotification(pushSubscription, payload);
-      
+
       console.log(`✅ Sent test notification to user: ${userId}`);
-      
+
       return { success: true };
     } catch (error: any) {
       console.error('❌ Error sending test notification:', error.message);

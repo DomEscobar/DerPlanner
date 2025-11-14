@@ -30,6 +30,44 @@ export const initializeDatabase = async (): Promise<void> => {
     client = await pool.connect();
     console.log('✅ Connected to PostgreSQL successfully!');
     
+    // Set timezone to UTC for all connections
+    await client.query("SET TIME ZONE 'UTC'");
+    console.log('⏰ Database timezone set to UTC');
+    
+    // Migrate existing TIMESTAMP columns to TIMESTAMPTZ
+    console.log('🔄 Migrating TIMESTAMP columns to TIMESTAMPTZ...');
+    
+    await client.query(`
+      ALTER TABLE tasks
+        ALTER COLUMN due_date TYPE TIMESTAMPTZ,
+        ALTER COLUMN created_at TYPE TIMESTAMPTZ,
+        ALTER COLUMN updated_at TYPE TIMESTAMPTZ,
+        ALTER COLUMN webhook_last_triggered TYPE TIMESTAMPTZ
+    `).catch(() => {
+      // Column might already be the correct type
+    });
+    
+    await client.query(`
+      ALTER TABLE events
+        ALTER COLUMN start_date TYPE TIMESTAMPTZ,
+        ALTER COLUMN end_date TYPE TIMESTAMPTZ,
+        ALTER COLUMN created_at TYPE TIMESTAMPTZ,
+        ALTER COLUMN updated_at TYPE TIMESTAMPTZ,
+        ALTER COLUMN webhook_last_triggered TYPE TIMESTAMPTZ,
+        ALTER COLUMN last_notification_sent TYPE TIMESTAMPTZ
+    `).catch(() => {
+      // Column might already be the correct type
+    });
+    
+    await client.query(`
+      ALTER TABLE conversation_history
+        ALTER COLUMN created_at TYPE TIMESTAMPTZ
+    `).catch(() => {
+      // Column might already be the correct type
+    });
+    
+    console.log('✅ TIMESTAMP migration completed');
+    
     // Enable pgvector extension
     await client.query('CREATE EXTENSION IF NOT EXISTS vector;').catch(() => {
       // Ignore if vector extension is not available
@@ -43,14 +81,14 @@ export const initializeDatabase = async (): Promise<void> => {
         description TEXT,
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled')),
         priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-        due_date TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         tags TEXT[] DEFAULT '{}',
         metadata JSONB DEFAULT '{}',
         user_id VARCHAR(255) NOT NULL,
         webhook_config JSONB DEFAULT NULL,
-        webhook_last_triggered TIMESTAMP DEFAULT NULL,
+        webhook_last_triggered TIMESTAMPTZ DEFAULT NULL,
         webhook_trigger_count INTEGER DEFAULT 0
       );
     `);
@@ -69,18 +107,18 @@ export const initializeDatabase = async (): Promise<void> => {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        start_date TIMESTAMP NOT NULL,
-        end_date TIMESTAMP NOT NULL,
+        start_date TIMESTAMPTZ NOT NULL,
+        end_date TIMESTAMPTZ NOT NULL,
         location VARCHAR(255),
         type VARCHAR(20) DEFAULT 'other' CHECK (type IN ('meeting', 'appointment', 'deadline', 'reminder', 'other')),
         status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in_progress', 'completed', 'cancelled')),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         attendees TEXT[] DEFAULT '{}',
         metadata JSONB DEFAULT '{}',
         user_id VARCHAR(255) NOT NULL,
         webhook_config JSONB DEFAULT NULL,
-        webhook_last_triggered TIMESTAMP DEFAULT NULL,
+        webhook_last_triggered TIMESTAMPTZ DEFAULT NULL,
         webhook_trigger_count INTEGER DEFAULT 0
       );
     `);
@@ -97,12 +135,12 @@ export const initializeDatabase = async (): Promise<void> => {
     await client.query(`
       CREATE TABLE IF NOT EXISTS embeddings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        content_type VARCHAR(50) NOT NULL, -- 'task' or 'event'
+        content_type VARCHAR(50) NOT NULL,
         content_id UUID NOT NULL,
         content_text TEXT NOT NULL,
-        embedding VECTOR(1536), -- OpenAI embedding dimension
+        embedding VECTOR(1536),
         metadata JSONB DEFAULT '{}',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
@@ -119,7 +157,7 @@ export const initializeDatabase = async (): Promise<void> => {
         role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
         content TEXT NOT NULL,
         actions JSONB DEFAULT '[]',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
@@ -128,8 +166,8 @@ export const initializeDatabase = async (): Promise<void> => {
       CREATE TABLE IF NOT EXISTS event_webhook_logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-        triggered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        trigger_time TIMESTAMP NOT NULL,
+        triggered_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        trigger_time TIMESTAMPTZ NOT NULL,
         request_url TEXT NOT NULL,
         request_method VARCHAR(10) NOT NULL,
         request_headers JSONB,
@@ -139,7 +177,7 @@ export const initializeDatabase = async (): Promise<void> => {
         error_message TEXT,
         retry_count INTEGER DEFAULT 0,
         success BOOLEAN NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
@@ -148,7 +186,7 @@ export const initializeDatabase = async (): Promise<void> => {
       CREATE TABLE IF NOT EXISTS task_webhook_logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-        triggered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        triggered_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         trigger_event VARCHAR(50) NOT NULL,
         previous_status VARCHAR(50),
         new_status VARCHAR(50),
@@ -161,7 +199,7 @@ export const initializeDatabase = async (): Promise<void> => {
         error_message TEXT,
         retry_count INTEGER DEFAULT 0,
         success BOOLEAN NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
@@ -173,8 +211,8 @@ export const initializeDatabase = async (): Promise<void> => {
         endpoint TEXT NOT NULL UNIQUE,
         keys JSONB NOT NULL,
         alarm_settings JSONB NOT NULL DEFAULT '{"enabled": false, "minutesBefore": 15, "soundEnabled": true, "showNotification": true}'::jsonb,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
@@ -188,14 +226,14 @@ export const initializeDatabase = async (): Promise<void> => {
         payload TEXT,
         success BOOLEAN DEFAULT false,
         error_message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
     
     // Add last_notification_sent column to events table if not exists
     await client.query(`
       ALTER TABLE events 
-      ADD COLUMN IF NOT EXISTS last_notification_sent TIMESTAMP;
+      ADD COLUMN IF NOT EXISTS last_notification_sent TIMESTAMPTZ;
     `).catch(() => {
       // Ignore if column already exists
     });

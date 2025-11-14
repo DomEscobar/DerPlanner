@@ -617,7 +617,7 @@ export const ChatInterface = () => {
 
       <div
         className="flex-shrink-0 border-t border-border bg-card p-4"
-        style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))', zIndex: 2 }}
+        style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))', zIndex: 20 }}
       >
         <div className="max-w-3xl mx-auto space-y-3">
           {/* Mode Toggle and Input */}

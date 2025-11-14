@@ -20,11 +20,23 @@ export const createTaskTool = createTool({
   execute: async ({ context }) => {
     const { title, description, priority, dueDate, tags, metadata, userId } = context;
     try {
+      let dueDateISO: string | null = null;
+      if (dueDate) {
+        const dueDateObj = new Date(dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          return {
+            success: false,
+            error: 'Invalid dueDate format'
+          };
+        }
+        dueDateISO = dueDateObj.toISOString();
+      }
+      
       const result = await query(
         `INSERT INTO tasks (title, description, priority, due_date, tags, metadata, user_id, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
          RETURNING id, title, description, priority, due_date as "dueDate", tags, metadata, user_id as "userId", status, created_at as "createdAt", updated_at as "updatedAt", webhook_config`,
-        [title, description || null, priority || 'medium', dueDate ? new Date(dueDate) : null, tags || [], JSON.stringify(metadata || {}), userId]
+        [title, description || null, priority || 'medium', dueDateISO, tags || [], JSON.stringify(metadata || {}), userId]
       );
       
       const task = result.rows[0];
@@ -131,8 +143,17 @@ export const updateTaskTool = createTool({
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
           if (key === 'dueDate') {
-            updateFields.push(`due_date = $${paramCount}`);
-            values.push(new Date(value as string));
+            if (value) {
+              const dateObj = new Date(value as string);
+              if (isNaN(dateObj.getTime())) {
+                throw new Error('Invalid dueDate format');
+              }
+              updateFields.push(`due_date = $${paramCount}`);
+              values.push(dateObj.toISOString());
+            } else {
+              updateFields.push(`due_date = $${paramCount}`);
+              values.push(null);
+            }
           } else {
             updateFields.push(`${key} = $${paramCount}`);
             values.push(value);

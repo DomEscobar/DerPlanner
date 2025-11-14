@@ -919,11 +919,24 @@ app.post('/api/tasks', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
+    let dueDateISO: string | null = null;
+    if (dueDate) {
+      const dueDateObj = new Date(dueDate);
+      if (isNaN(dueDateObj.getTime())) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid dueDate format'
+        });
+        return;
+      }
+      dueDateISO = dueDateObj.toISOString();
+    }
+    
     const result = await query(
       `INSERT INTO tasks (title, description, priority, status, due_date, tags, user_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [title, description, priority, status, dueDate ? new Date(dueDate) : null, tags, userId]
+      [title, description, priority, status, dueDateISO, tags, userId]
     );
     
     res.status(201).json({
@@ -970,7 +983,15 @@ app.put('/api/tasks/:id', async (req: Request, res: Response): Promise<void> => 
       if (allowedFields.includes(dbKey) && value !== undefined) {
         updateFields.push(`${dbKey} = $${paramCount}`);
         if (key === 'dueDate') {
-          values.push(value ? new Date(value as string) : null);
+          if (value) {
+            const dateObj = new Date(value as string);
+            if (isNaN(dateObj.getTime())) {
+              throw new Error('Invalid dueDate format');
+            }
+            values.push(dateObj.toISOString());
+          } else {
+            values.push(null);
+          }
         } else {
           values.push(value);
         }
@@ -1162,11 +1183,22 @@ app.post('/api/events', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid date format'
+      });
+      return;
+    }
+    
     const result = await query(
       `INSERT INTO events (title, description, start_date, end_date, location, type, status, attendees, user_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [title, description, new Date(startDate), new Date(endDate), location, type, status, attendees, userId]
+      [title, description, startDateObj.toISOString(), endDateObj.toISOString(), location, type, status, attendees, userId]
     );
     
     res.status(201).json({
@@ -1199,7 +1231,11 @@ app.put('/api/events/:id', async (req: Request, res: Response): Promise<void> =>
       if (allowedFields.includes(dbKey) && value !== undefined) {
         updateFields.push(`${dbKey} = $${paramCount}`);
         if (key === 'startDate' || key === 'endDate') {
-          values.push(new Date(value as string));
+          const dateObj = new Date(value as string);
+          if (isNaN(dateObj.getTime())) {
+            throw new Error(`Invalid date format for ${key}`);
+          }
+          values.push(dateObj.toISOString());
         } else {
           values.push(value);
         }
@@ -1549,6 +1585,26 @@ app.post('/api/tasks/:id/webhook/trigger', async (req: Request, res: Response): 
     res.status(500).json({
       success: false,
       error: 'Failed to trigger webhook'
+    });
+  }
+});
+
+// Debug endpoint to manually trigger webhook check
+app.post('/api/webhooks/debug/check', async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log('\n🔧 Manual webhook check triggered via API');
+    // Access the private method via reflection (for debugging only)
+    await (webhookService as any).checkAndTriggerWebhooks();
+    
+    res.json({
+      success: true,
+      message: 'Webhook check cycle completed. Check server logs for detailed output.'
+    });
+  } catch (error) {
+    console.error('Error during manual webhook check:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to run webhook check'
     });
   }
 });

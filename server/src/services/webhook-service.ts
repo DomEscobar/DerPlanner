@@ -70,28 +70,24 @@ export class WebhookService {
   private async checkAndTriggerWebhooks(): Promise<void> {
     try {
       const now = new Date();
-      const checkWindowEnd = new Date(now.getTime() + this.CHECK_INTERVAL_MS * 2);
+      const checkWindowEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
-      // Find events that:
-      // 1. Have webhook enabled
-      // 2. Are scheduled
-      // 3. Start time (minus offset) is within our check window
-      // 4. Haven't been triggered yet (or should be re-triggered)
       const result = await query(
         `SELECT 
           id, title, start_date, webhook_config, 
-          webhook_last_triggered, webhook_trigger_count
+          webhook_last_triggered, webhook_trigger_count,
+          start_date - INTERVAL '1 minute' * COALESCE((webhook_config->>'triggerOffset')::integer, 0) as trigger_time
          FROM events
          WHERE status = 'scheduled'
            AND webhook_config IS NOT NULL
            AND (webhook_config->>'enabled')::boolean = true
-           AND start_date BETWEEN $1 AND $2
+           AND start_date - INTERVAL '1 minute' * COALESCE((webhook_config->>'triggerOffset')::integer, 0) BETWEEN $1 AND $2
            AND (
              webhook_last_triggered IS NULL 
              OR webhook_last_triggered < start_date - INTERVAL '1 hour'
            )
          ORDER BY start_date ASC`,
-        [now, checkWindowEnd]
+        [now.toISOString(), checkWindowEnd.toISOString()]
       );
 
       if (result.rows.length > 0) {
@@ -100,15 +96,18 @@ export class WebhookService {
 
       for (const event of result.rows) {
         const webhookConfig: WebhookConfig = event.webhook_config;
-        const triggerOffset = webhookConfig.triggerOffset || 0;
-        const triggerTime = new Date(
-          new Date(event.start_date).getTime() - triggerOffset * 60000
-        );
-
-        // Check if it's time to trigger
-        if (triggerTime <= now) {
+        const triggerTime = new Date(event.trigger_time);
+        
+        // Trigger if the trigger time has passed or is within the next minute
+        // (accounts for timing precision and query execution time)
+        const timeUntilTrigger = triggerTime.getTime() - now.getTime();
+        const minutesUntil = Math.round(timeUntilTrigger / 60000);
+        
+        if (timeUntilTrigger <= 60000) { // Within next 60 seconds
           console.log(`🔔 Triggering webhook for event: ${event.title}`);
           await this.executeWebhook(event.id, event, webhookConfig);
+        } else {
+          console.log(`⏰ Webhook for "${event.title}" scheduled in ${minutesUntil} minutes`);
         }
       }
     } catch (error) {

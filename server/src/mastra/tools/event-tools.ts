@@ -21,11 +21,21 @@ export const createEventTool = createTool({
   execute: async ({ context }) => {
     const { title, description, startDate, endDate, location, type, attendees, metadata, userId } = context;
     try {
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        return {
+          success: false,
+          error: 'Invalid date format for startDate or endDate'
+        };
+      }
+      
       const result = await query(
         `INSERT INTO events (title, description, start_date, end_date, location, type, attendees, metadata, user_id, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'scheduled')
          RETURNING id, title, description, start_date as "startDate", end_date as "endDate", location, type, attendees, metadata, user_id as "userId", status, created_at as "createdAt", updated_at as "updatedAt"`,
-        [title, description || null, new Date(startDate), new Date(endDate), location || null, type || 'other', attendees || [], JSON.stringify(metadata || {}), userId]
+        [title, description || null, startDateObj.toISOString(), endDateObj.toISOString(), location || null, type || 'other', attendees || [], JSON.stringify(metadata || {}), userId]
       );
       
       return {
@@ -101,11 +111,19 @@ export const updateEventTool = createTool({
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
           if (key === 'startDate') {
+            const dateObj = new Date(value as string);
+            if (isNaN(dateObj.getTime())) {
+              throw new Error('Invalid startDate format');
+            }
             updateFields.push(`start_date = $${paramCount}`);
-            values.push(new Date(value as string));
+            values.push(dateObj.toISOString());
           } else if (key === 'endDate') {
+            const dateObj = new Date(value as string);
+            if (isNaN(dateObj.getTime())) {
+              throw new Error('Invalid endDate format');
+            }
             updateFields.push(`end_date = $${paramCount}`);
-            values.push(new Date(value as string));
+            values.push(dateObj.toISOString());
           } else {
             updateFields.push(`${key} = $${paramCount}`);
             values.push(value);
@@ -218,14 +236,28 @@ export const listEventsTool = createTool({
       }
       
       if (startDateFrom) {
+        const fromDate = new Date(startDateFrom);
+        if (isNaN(fromDate.getTime())) {
+          return {
+            success: false,
+            error: 'Invalid startDateFrom format'
+          };
+        }
         conditions.push(`start_date >= $${paramCount}`);
-        values.push(new Date(startDateFrom));
+        values.push(fromDate.toISOString());
         paramCount++;
       }
       
       if (startDateTo) {
+        const toDate = new Date(startDateTo);
+        if (isNaN(toDate.getTime())) {
+          return {
+            success: false,
+            error: 'Invalid startDateTo format'
+          };
+        }
         conditions.push(`start_date <= $${paramCount}`);
-        values.push(new Date(startDateTo));
+        values.push(toDate.toISOString());
         paramCount++;
       }
       
