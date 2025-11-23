@@ -382,9 +382,11 @@ export const TodoList = () => {
                   <div
                     key={task.id}
                     className="cursor-pointer transition-transform hover:scale-[1.01]"
-                    onClick={() => handleEdit(task)}
                   >
-                    <TaskPreview tasks={[task]} />
+                    <TaskPreview 
+                      tasks={[task]} 
+                      onTaskClick={() => handleEdit(task)}
+                    />
                   </div>
                 ))}
               </div>

@@ -6,7 +6,7 @@ export interface LocalTask {
   text: string;
   description?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   dueDate?: Date;
   tags?: string[];
 }

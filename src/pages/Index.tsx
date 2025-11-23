@@ -4,54 +4,62 @@ import { ChatInterface } from "@/components/ChatInterface";
 import { CalendarView } from "@/components/CalendarView";
 import { TodoList } from "@/components/TodoList";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
-import { MessageSquare, Calendar, CheckSquare } from "lucide-react";
+import { Home, Calendar, CheckSquare } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("chat");
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col h-[100dvh] overflow-hidden relative bg-background">
       <PWAInstallButton />
+      
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col overflow-hidden"
       >
-        <TabsList className="flex-shrink-0 w-full justify-center p-4 rounded-none border-b border-border bg-card/95 backdrop-blur-sm">
-          <TabsTrigger
-            value="chat"
-            className="rounded-full data-[state=active]:text-secondary-foreground data-[state=active]:text-primary"
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Chat
-          </TabsTrigger>
-          <TabsTrigger
-            value="calendar"
-            className="rounded-full data-[state=active]:text-secondary-foreground data-[state=active]:text-primary"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger
-            value="todos"
-            className="rounded-full data-[state=active]:text-secondary-foreground data-[state=active]:text-primary"
-          >
-            <CheckSquare className="h-4 w-4 mr-2" />
-            Tasks
-          </TabsTrigger>
-        </TabsList>
+        {/* Top Navigation Header */}
+        <div className="flex-shrink-0 z-50 px-4 py-3 flex items-center justify-center bg-background/80 backdrop-blur-xl border-b border-border/50">
+            <TabsList className="bg-muted/50 border border-border/50 p-1 h-9 rounded-full">
+              <TabsTrigger 
+                value="chat" 
+                className="rounded-full px-3 h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
+                title="Today"
+              >
+                <Home className="h-4 w-4" />
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="calendar" 
+                className="rounded-full px-3 h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
+                title="Calendar"
+              >
+                <Calendar className="h-4 w-4" />
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="todos" 
+                className="rounded-full px-3 h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
+                title="Tasks"
+              >
+                <CheckSquare className="h-4 w-4" />
+              </TabsTrigger>
+            </TabsList>
+        </div>
 
-        <TabsContent value="chat" className="flex-1 m-0 overflow-hidden">
-          <ChatInterface />
-        </TabsContent>
+        <div className="flex-1 overflow-hidden relative z-0">
+            <TabsContent value="chat" className="h-full m-0">
+            <ChatInterface />
+            </TabsContent>
 
-        <TabsContent value="calendar" className="flex-1 m-0 overflow-hidden">
-          <CalendarView />
-        </TabsContent>
+            <TabsContent value="calendar" className="h-full m-0">
+            <CalendarView />
+            </TabsContent>
 
-        <TabsContent value="todos" className="flex-1 m-0 overflow-hidden">
-          <TodoList />
-        </TabsContent>
+            <TabsContent value="todos" className="h-full m-0">
+            <TodoList />
+            </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

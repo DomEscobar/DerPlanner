@@ -26,7 +26,20 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
       let stream = streamRef.current;
       
       if (!stream) {
-        onPermissionStatus?.('requesting');
+        // Check if permission is already granted to avoid showing the modal unnecessarily
+        let shouldShowPrompt = true;
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          if (permissionStatus.state === 'granted') {
+            shouldShowPrompt = false;
+          }
+        } catch (e) {
+          // If permission query fails or is not supported, we assume we need to show prompt
+        }
+
+        if (shouldShowPrompt) {
+          onPermissionStatus?.('requesting');
+        }
         
         stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
@@ -157,7 +170,20 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
         return;
       }
 
-      onPermissionStatus?.('requesting');
+      // Check if permission is already granted to avoid showing the modal unnecessarily
+      let shouldShowPrompt = true;
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        if (permissionStatus.state === 'granted') {
+          shouldShowPrompt = false;
+        }
+      } catch (e) {
+        // If permission query fails or is not supported, we assume we need to show prompt
+      }
+
+      if (shouldShowPrompt) {
+        onPermissionStatus?.('requesting');
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -165,7 +191,7 @@ export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
           sampleRate: 16000,
           echoCancellation: true,
           noiseSuppression: true,
-        } 
+          } 
       });
       
       streamRef.current = stream;

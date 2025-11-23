@@ -2,88 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 30 20% 96%;
-    --foreground: 30 10% 20%;
+    /* Air / Canvas */
+    --background: 210 40% 98%; /* Very light cool gray/blue tint */
+    --foreground: 222 47% 11%;
 
-    --card: 30 25% 98%;
-    --card-foreground: 30 10% 20%;
+    /* Cards - Clean White */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 30 25% 98%;
-    --popover-foreground: 30 10% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 15 85% 65%;
-    --primary-foreground: 30 25% 98%;
+    /* Primary - Electric Indigo */
+    --primary: 239 84% 67%; /* A vivid, fun purple-blue */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 20% 90%;
-    --secondary-foreground: 30 10% 20%;
+    /* Secondary - Soft Lavender/Gray */
+    --secondary: 240 20% 96%;
+    --secondary-foreground: 240 10% 20%;
 
-    --muted: 30 15% 88%;
-    --muted-foreground: 30 8% 45%;
+    --muted: 240 20% 96%;
+    --muted-foreground: 240 10% 50%;
 
-    --accent: 15 85% 65%;
-    --accent-foreground: 30 25% 98%;
+    /* Accent - Hot Coral/Pink for pops of energy */
+    --accent: 339 90% 65%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 30 25% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 88%;
-    --input: 30 20% 92%;
-    --ring: 15 85% 65%;
+    --border: 240 20% 92%;
+    --input: 240 20% 92%;
+    --ring: 239 84% 67%;
 
-    --radius: 1rem;
+    --radius: 1.25rem; /* Soft but not pill-shaped everywhere */
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 30 15% 12%;
-    --foreground: 30 20% 95%;
+    /* Deep Space Background */
+    --background: 240 30% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 30 15% 15%;
-    --card-foreground: 30 20% 95%;
+    --card: 240 25% 12%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 30 15% 15%;
-    --popover-foreground: 30 20% 95%;
+    --popover: 240 25% 12%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 15 85% 65%;
-    --primary-foreground: 30 25% 98%;
+    --primary: 239 84% 72%; /* Lighter for dark mode */
+    --primary-foreground: 240 30% 8%;
 
-    --secondary: 30 10% 20%;
-    --secondary-foreground: 30 20% 95%;
+    --secondary: 240 20% 18%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 30 10% 20%;
-    --muted-foreground: 30 12% 55%;
+    --muted: 240 20% 18%;
+    --muted-foreground: 240 10% 65%;
 
-    --accent: 15 85% 65%;
-    --accent-foreground: 30 25% 98%;
+    --accent: 339 80% 70%;
+    --accent-foreground: 240 30% 8%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 30 20% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 30 10% 25%;
-    --input: 30 10% 20%;
-    --ring: 15 85% 65%;
-    --sidebar-background: 240 5.9% 10%;
+    --border: 240 20% 20%;
+    --input: 240 20% 20%;
+    --ring: 239 84% 72%;
+    
+    --sidebar-background: 240 30% 8%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -105,6 +101,20 @@ All colors MUST be HSL.
     overflow: hidden;
   }
 
+  /* Subtle gradient mesh background */
+  body {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(239, 84%, 67%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(339, 90%, 65%, 0.08) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+  
+  .dark body {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(239, 84%, 67%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(339, 90%, 65%, 0.15) 0px, transparent 50%);
+  }
+
   /* Ensure content respects safe areas on devices with notches/home indicators */
   html {
     height: 100%;
@@ -119,46 +129,51 @@ All colors MUST be HSL.
   #root {
     min-height: 100%;
     min-height: -webkit-fill-available;
-    padding-bottom: env(safe-area-inset-bottom);
+    /* Remove padding-bottom here as we'll handle it in the layout for floating nav */
   }
 }
 
-/* Custom scrollbar styling for chat content */
+/* Utilities for the new design */
+@layer utilities {
+  /* Floating glass effect - more subtle */
+  .glass-panel {
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-lg border border-white/40 dark:border-white/5 shadow-sm;
+  }
+  
+  /* Vibrant soft shadows */
+  .shadow-glow {
+    @apply shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)];
+  }
+  
+  .shadow-glow-accent {
+    @apply shadow-[0_0_20px_-5px_rgba(244,63,94,0.2)];
+  }
+}
+
 .chat-scroll-area {
   overflow-y: auto;
   overflow-x: hidden;
 }
 
+/* Minimal scrollbar */
 .chat-scroll-area::-webkit-scrollbar {
-  width: 12px;
+  width: 6px;
 }
-
 .chat-scroll-area::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.3);
-  border-radius: 6px;
+  background: transparent;
 }
-
 .chat-scroll-area::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.6);
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 10px;
 }
-
 .chat-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.8);
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: hsl(var(--muted-foreground) / 0.5);
 }
-
-/* Firefox scrollbar */
 .chat-scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--muted) / 0.3);
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
 }
 
-/* Prevent context menu and callout on touch devices */
 .touch-manipulation {
   -webkit-touch-callout: none;
   -webkit-user-select: none;

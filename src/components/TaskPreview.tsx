@@ -33,14 +33,19 @@ interface Task {
 
 interface TaskPreviewProps {
   tasks: Task[];
+  onTaskClick?: (task: Task) => void;
 }
 
-export const TaskPreview = ({ tasks }: TaskPreviewProps) => {
+export const TaskPreview = ({ tasks, onTaskClick }: TaskPreviewProps) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
 
   const handleOpenEdit = (task: Task) => {
+    if (onTaskClick) {
+      onTaskClick(task);
+      return;
+    }
     setSelectedTask({ ...task });
     setIsEditModalOpen(true);
   };

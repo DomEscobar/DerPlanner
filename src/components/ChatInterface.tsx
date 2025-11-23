@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, AlertCircle, Wifi, WifiOff, Sparkles, ChevronUp, CheckSquare, Calendar, Search, Zap, Mic } from "lucide-react";
+import { Send, Loader2, AlertCircle, Wifi, WifiOff, Sparkles, ChevronUp, Keyboard, Mic, History, X, ArrowUp } from "lucide-react";
 import { TaskPreview } from "@/components/TaskPreview";
 import { EventPreview } from "@/components/EventPreview";
 import { StreamingProgress } from "@/components/StreamingProgress";
 import { MicrophonePermissionModal } from "@/components/MicrophonePermissionModal";
+import { DailyBriefing } from "@/components/DailyBriefing";
 import { useChat, ChatMessage } from "@/hooks/useChat";
 import { useStreamingChat } from "@/hooks/useStreamingChat";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -53,6 +54,8 @@ export const ChatInterface = () => {
   const [personaModalOpen, setPersonaModalOpen] = useState(false);
   const [permissionModalOpen, setPermissionModalOpen] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<'requesting' | 'denied' | 'error'>('requesting');
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showTextInput, setShowTextInput] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -108,7 +111,6 @@ export const ChatInterface = () => {
           description: "You're offline. Messages will be sent when connection is restored.",
           variant: "destructive",
         });
-      } else if (status === 'online') {
       }
     });
 
@@ -123,8 +125,6 @@ export const ChatInterface = () => {
     messages: regularMessages,
     isLoading,
     sendMessage,
-    clearMessages,
-    startNewChat,
     userId,
     sessionId,
     conversationId,
@@ -220,6 +220,8 @@ export const ChatInterface = () => {
 
     const messageToSend = input;
     setInput("");
+    setShowTextInput(false);
+    setShowChatHistory(true);
 
     // Reset to show last 10 messages when sending new message
     setMessagesToShow(10);
@@ -249,6 +251,7 @@ export const ChatInterface = () => {
       cleanup();
       try {
         await recordAndTranscribe(userId);
+        setShowChatHistory(true);
       } catch (error) {
         console.error('Error processing audio:', error);
       }
@@ -290,7 +293,6 @@ export const ChatInterface = () => {
     if (isStreaming || isLoadingHistory) return 'streaming';
     if (isLoading || isProcessing) return 'thinking';
 
-    // Check last message for tasks/events/errors
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.error) return 'error';
     if (lastMessage?.tasks && lastMessage.tasks.length > 0) return 'task-created';
@@ -302,7 +304,7 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
       {/* Connection Status Bar */}
       {connectionStatus !== 'online' && (
         <div className={`flex-shrink-0 px-4 py-2 text-sm flex items-center gap-2 ${connectionStatus === 'offline'
@@ -327,12 +329,14 @@ export const ChatInterface = () => {
         ref={scrollAreaRef}
         className="chat-scroll-area flex-1 min-h-0 p-4 relative"
       >
-        {/* Matrix Avatar Background - Compact when messages exist, adaptive to state */}
+        {/* Matrix Avatar Background - Only show in chat history mode */}
+        {showChatHistory && (
         <MatrixAvatar
           compact={messages.length > 0}
           state={getAvatarState()}
           onClick={() => setPersonaModalOpen(true)}
         />
+        )}
 
         {/* Persona Modal */}
         {userId && (
@@ -356,7 +360,34 @@ export const ChatInterface = () => {
         />
 
         <div className="max-w-3xl mx-auto space-y-4 relative z-10">
-          {/* Loading state - Show while fetching conversation history */}
+          {/* Daily Briefing - Show by default */}
+          {!showChatHistory && !isLoadingHistory && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <DailyBriefing />
+              
+              {/* Show chat history button - Floating near top right of content */}
+              {allMessages.length > 0 && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowChatHistory(true)}
+                    className="text-muted-foreground hover:text-primary text-xs"
+                  >
+                    <History className="h-3 w-3 mr-1.5" />
+                    Recent activity ({allMessages.length})
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Loading state */}
           {isLoadingHistory && messages.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -366,332 +397,369 @@ export const ChatInterface = () => {
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="h-12 w-12 text-primary animate-spin" />
                 <div className="text-center space-y-2">
-                  <p className="text-sm font-medium text-foreground">Loading your conversations...</p>
-                  <p className="text-xs text-muted-foreground">Just a moment while we fetch your messages</p>
+                  <p className="text-sm font-medium text-foreground">Loading...</p>
                 </div>
-              </div>
-              {/* Loading skeleton for messages */}
-              <div className="w-full max-w-2xl space-y-4 mt-8">
-                {[...Array(3)].map((_, i) => (
-                  <motion.div
-                    key={`skeleton-${i}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`rounded-2xl p-4 ${i % 2 === 0 ? 'bg-secondary' : 'bg-muted'} animate-pulse`}>
-                      <div className="space-y-2">
-                        <div className={`h-3 ${i % 2 === 0 ? 'w-32' : 'w-48'} bg-muted-foreground/20 rounded`}></div>
-                        <div className={`h-3 ${i % 2 === 0 ? 'w-24' : 'w-40'} bg-muted-foreground/20 rounded`}></div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
             </motion.div>
           )}
 
-          {/* Welcome Suggestions - Show when no messages and not loading */}
-          {!isLoadingHistory && messages.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col items-center justify-center gap-6 pt-8"
-            >
-              <div className="text-center space-y-3">
-                <h1 className="text-3xl font-bold text-foreground">
-                  Hi! I'm DerPlanner
-                </h1>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Your task and event assistant. I can help you organize your day, schedule events, and manage tasks.
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    🚀 <span className="font-medium">Demo & Open Source</span> • Check out the code on{' '}
-                    <a
-                      href="https://github.com/DomEscobar/Zippy/blob/main/README.md"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline font-medium"
-                    >
-                      GitHub
-                    </a>
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setInput("Create a task to review project documentation by Friday")}
-                  className="group relative text-left p-5 rounded-xl bg-gradient-to-br from-background to-muted/30 hover:to-muted/50 border border-border hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+          {/* Chat History */}
+          {showChatHistory && (
+            <>
+              {/* Back to today button */}
+              <div className="flex justify-between items-center sticky top-0 z-50 bg-background/80 backdrop-blur-md p-2 -mx-2 rounded-b-xl">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowChatHistory(false)}
+                  className="text-primary font-medium"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <CheckSquare className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground mb-1">
-                        Create Tasks
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Create a task to review project documentation by Friday
-                      </p>
-                    </div>
-                  </div>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setInput("Schedule a team meeting tomorrow at 2pm for 1 hour")}
-                  className="group relative text-left p-5 rounded-xl bg-gradient-to-br from-background to-muted/30 hover:to-muted/50 border border-border hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                      <Calendar className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground mb-1">
-                        Schedule Events
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Schedule a team meeting tomorrow at 2pm for 1 hour
-                      </p>
-                    </div>
-                  </div>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setInput("What are my upcoming tasks?")}
-                  className="group relative text-left p-5 rounded-xl bg-gradient-to-br from-background to-muted/30 hover:to-muted/50 border border-border hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                      <Search className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-foreground mb-1">
-                        Check Tasks
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        What are my upcoming tasks?
-                      </p>
-                    </div>
-                  </div>
-                </motion.button>
-
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Back to Briefing
+                </Button>
               </div>
-
-              <div className="text-center">
-                <p className="text-[10px] text-muted-foreground/70">
-                  I understand natural language, so just type what you need!
-                </p>
-              </div>
-            </motion.div>
-          )}
 
           {/* Show load more button if there are more messages */}
           {messagesToShow < allMessages.length && (
             <div className="text-center py-2">
               <button
                 onClick={() => setMessagesToShow(prev => Math.min(prev + 10, allMessages.length))}
-                className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 px-4 py-2 rounded-full transition-colors"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground glass-panel px-4 py-2 rounded-full transition-colors"
               >
                 <ChevronUp className="h-3 w-3" />
                 <span>Load older messages ({allMessages.length - messagesToShow} hidden)</span>
               </button>
             </div>
           )}
+
           <AnimatePresence mode="popLayout">
             {messages.map((message, index) => {
               const isLastMessage = index === messages.length - 1;
-              // Apply height to last AI message (including streaming/loading)
               const isLastAIMessage = isLastMessage && message.role === 'assistant';
 
-              return (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`rounded-2xl px-4 py-2 max-w-[85%] ${isLastAIMessage ? "min-h-[70svh]" : ""
-                      } ${message.role === "user"
-                        ? "bg-secondary text-secondary-foreground"
-                        : message.error
-                          ? "bg-destructive/10 border border-destructive/20"
-                          : (message as any).isStreaming
-                            ? "p-4"
-                            : ""
-                      }`}
-                  >
-                    {message.isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">Thinking...</span>
-                      </div>
-                    ) : (message as any).isStreaming ? (
-                      // Streaming mode - show progress
-                      <StreamingProgress
-                        steps={(message as any).steps || []}
-                        currentMessage={(message as any).currentMessage}
-                        isComplete={false}
-                      />
-                    ) : (
-                      <>
-                        {message.role === "user" ? (
-                          <p className="text-sm leading-relaxed">{String(message.content || '')}</p>
-                        ) : (
-                          <>
-                            <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-a:font-medium hover:prose-a:text-blue-800 dark:hover:prose-a:text-blue-300">
-                              <ReactMarkdown
-                                components={{
-                                  a: ({ node, ...props }) => (
-                                    <a
-                                      {...props}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium transition-colors"
-                                    />
-                                  ),
-                                }}
-                              >
-                                {typeof message.content === 'string'
-                                  ? message.content
-                                  : JSON.stringify(message.content, null, 2)}
-                              </ReactMarkdown>
-                            </div>
-                            {/* Show completed steps if they exist */}
-                            {(message as any).steps && (message as any).steps.length > 0 && (
-                              <div className="mt-4 pt-4 border-t border-border/50">
-                                <details className="group">
-                                  <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
-                                    <Sparkles className="h-3 w-3" />
-                                    <span>View execution steps ({(message as any).steps.length})</span>
-                                  </summary>
-                                  <div className="mt-3">
-                                    <StreamingProgress
-                                      steps={(message as any).steps}
-                                      isComplete={true}
-                                    />
-                                  </div>
-                                </details>
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
+                      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      {isLastAIMessage ? (
+                        <div className="min-h-[70svh] flex items-start max-w-[85%]">
+                          <div
+                            className={`rounded-2xl px-4 py-3 w-full shadow-sm ${
+                              message.role === "user"
+                                ? "bg-primary text-primary-foreground shadow-primary/20"
+                                : message.error
+                                  ? "bg-destructive/10 border border-destructive/20"
+                                  : (message as any).isStreaming
+                                    ? "p-4 bg-card border"
+                                    : "bg-card border"
+                            }`}
+                          >
+                            {message.isLoading ? (
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-sm">Thinking...</span>
                               </div>
+                            ) : (message as any).isStreaming ? (
+                              <StreamingProgress
+                                steps={(message as any).steps || []}
+                                currentMessage={(message as any).currentMessage}
+                                isComplete={false}
+                              />
+                            ) : (
+                              <>
+                                {message.role === "user" ? (
+                                  <p className="text-sm leading-relaxed font-medium">{String(message.content || '')}</p>
+                                ) : (
+                                  <>
+                                    <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert">
+                                      <ReactMarkdown
+                                        components={{
+                                          a: ({ node, ...props }) => (
+                                            <a
+                                              {...props}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-primary hover:underline font-medium transition-colors"
+                                            />
+                                          ),
+                                        }}
+                                      >
+                                        {typeof message.content === 'string'
+                                          ? message.content
+                                          : JSON.stringify(message.content, null, 2)}
+                                      </ReactMarkdown>
+                                    </div>
+                                    {(message as any).steps && (message as any).steps.length > 0 && (
+                                      <div className="mt-4 pt-4 border-t border-border/50">
+                                        <details className="group">
+                                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
+                                            <Sparkles className="h-3 w-3" />
+                                            <span>View execution steps ({(message as any).steps.length})</span>
+                                          </summary>
+                                          <div className="mt-3">
+                                            <StreamingProgress
+                                              steps={(message as any).steps}
+                                              isComplete={true}
+                                            />
+                                          </div>
+                                        </details>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                                {message.error && (
+                                  <div className="flex items-center gap-2 mt-2 text-destructive text-xs">
+                                    <AlertCircle className="h-3 w-3" />
+                                    <span>{message.error}</span>
+                                  </div>
+                                )}
+                                {message.tasks && message.tasks.length > 0 && (
+                                  <div className="mt-3">
+                                    <TaskPreview tasks={message.tasks} />
+                                  </div>
+                                )}
+                                {message.events && message.events.length > 0 && (
+                                  <div className="mt-3">
+                                    <EventPreview events={message.events} flattenRecurring={true} />
+                                  </div>
+                                )}
+                              </>
                             )}
-                          </>
-                        )}
-                        {message.error && (
-                          <div className="flex items-center gap-2 mt-2 text-destructive text-xs">
-                            <AlertCircle className="h-3 w-3" />
-                            <span>{message.error}</span>
                           </div>
-                        )}
-                        {message.tasks && message.tasks.length > 0 && (
-                          <div className="mt-3">
-                            <TaskPreview tasks={message.tasks} />
-                          </div>
-                        )}
-                        {message.events && message.events.length > 0 && (
-                          <div className="mt-3">
-                            <EventPreview events={message.events} flattenRecurring={true} />
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div
+                          className={`rounded-2xl px-4 py-3 max-w-[85%] shadow-sm ${
+                            message.role === "user"
+                              ? "bg-primary text-primary-foreground shadow-primary/20"
+                              : message.error
+                                ? "bg-destructive/10 border border-destructive/20"
+                                : (message as any).isStreaming
+                                  ? "p-4 bg-card border"
+                                  : "bg-card border"
+                          }`}
+                        >
+                          {message.isLoading ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-sm">Thinking...</span>
+                            </div>
+                          ) : (message as any).isStreaming ? (
+                            <StreamingProgress
+                              steps={(message as any).steps || []}
+                              currentMessage={(message as any).currentMessage}
+                              isComplete={false}
+                            />
+                          ) : (
+                            <>
+                              {message.role === "user" ? (
+                                <p className="text-sm leading-relaxed font-medium">{String(message.content || '')}</p>
+                              ) : (
+                                <>
+                                  <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert">
+                                    <ReactMarkdown
+                                      components={{
+                                        a: ({ node, ...props }) => (
+                                          <a
+                                            {...props}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline font-medium transition-colors"
+                                          />
+                                        ),
+                                      }}
+                                    >
+                                      {typeof message.content === 'string'
+                                        ? message.content
+                                        : JSON.stringify(message.content, null, 2)}
+                                    </ReactMarkdown>
+                                  </div>
+                                  {(message as any).steps && (message as any).steps.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-border/50">
+                                      <details className="group">
+                                        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
+                                          <Sparkles className="h-3 w-3" />
+                                          <span>View execution steps ({(message as any).steps.length})</span>
+                                        </summary>
+                                        <div className="mt-3">
+                                          <StreamingProgress
+                                            steps={(message as any).steps}
+                                            isComplete={true}
+                                          />
+                                        </div>
+                                      </details>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                              {message.error && (
+                                <div className="flex items-center gap-2 mt-2 text-destructive text-xs">
+                                  <AlertCircle className="h-3 w-3" />
+                                  <span>{message.error}</span>
+                                </div>
+                              )}
+                              {message.tasks && message.tasks.length > 0 && (
+                                <div className="mt-3">
+                                  <TaskPreview tasks={message.tasks} />
+                                </div>
+                              )}
+                              {message.events && message.events.length > 0 && (
+                                <div className="mt-3">
+                                  <EventPreview events={message.events} flattenRecurring={true} />
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+              
+              <div className="h-24" /> {/* Spacer for bottom input */}
+            </>
+          )}
         </div>
       </div>
 
+      {/* Floating Input Area - Positioned at bottom now that nav is at top */}
       <div
-        className="flex-shrink-0 border-t border-border bg-card p-4"
-        style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))', zIndex: 20 }}
+        className="absolute bottom-6 left-0 right-0 z-40 pointer-events-none flex justify-center"
       >
-        <div className="max-w-3xl mx-auto space-y-3">
-          {/* Mode Toggle and Input */}
-          <div className="flex gap-2 items-center">
+        <div className="pointer-events-auto max-w-3xl w-full px-4 flex flex-col items-center gap-4">
+          
+          {/* Text Input Mode - Slide up */}
+          <AnimatePresence>
+            {showTextInput && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                className="w-full max-w-md"
+              >
+                <div className="glass-panel rounded-3xl p-2 pl-4 flex gap-2 items-center shadow-xl border border-primary/20 bg-white/90 dark:bg-black/90">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder="Type your message here..."
-              className="flex-1 bg-background border-border rounded-full px-4 h-9 text-sm select-none"
+                    placeholder="What's on your mind?"
+                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-10"
               disabled={isLoading || isStreaming || isRecording || isProcessing}
-            />
+                    autoFocus
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setShowTextInput(false)}
+                    className="rounded-full h-10 w-10 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    size="icon"
+                    className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-glow hover:shadow-glow-accent transition-all"
+                    disabled={isLoading || isStreaming || connectionStatus === 'offline' || !input.trim()}
+                  >
+                    {isLoading || isStreaming ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <ArrowUp className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {!input.trim() && !isRecording && !isProcessing ? (
+          {/* Main Floating Action Button */}
+          {!showTextInput && (
+            <div className="flex items-center gap-6">
+              {/* Keyboard Toggle */}
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setShowTextInput(true)}
+                  className="rounded-full h-12 w-12 bg-white dark:bg-black border-border shadow-lg text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
+                  disabled={isRecording || isProcessing}
+                >
+                  <Keyboard className="h-5 w-5" />
+                </Button>
+              </motion.div>
+
+              {/* Big Mic */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative"
+              >
+                {/* Ripple Effect when recording */}
+                {isRecording && (
+                   <motion.div
+                     initial={{ opacity: 0.5, scale: 1 }}
+                     animate={{ opacity: 0, scale: 2 }}
+                     transition={{ repeat: Infinity, duration: 1.5 }}
+                     className="absolute inset-0 rounded-full bg-destructive/50 z-[-1]"
+                   />
+                )}
+
               <Button
                 onPointerDown={handleMicPress}
                 onTouchStart={handleMicPress}
                 onContextMenu={(e) => e.preventDefault()}
                 size="icon"
-                variant="outline"
-                className="rounded-full h-9 w-9 select-none"
+                  className={`rounded-full h-20 w-20 shadow-2xl transition-all border-4 border-background ${
+                    isRecording
+                      ? 'bg-destructive hover:bg-destructive text-white shadow-destructive/40'
+                      : isProcessing
+                        ? 'bg-primary text-white animate-pulse'
+                        : 'bg-primary text-white shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-1'
+                  }`}
                 style={{ touchAction: 'none', WebkitTouchCallout: 'none' }}
                 disabled={isLoading || isStreaming || connectionStatus === 'offline'}
-                title="Hold to record voice message"
-              >
-                <Mic className="h-4 w-4" />
-              </Button>
-            ) : null}
-
-            {(isRecording || isProcessing) && (
-              <Button
-                size="icon"
-                variant="destructive"
-                className="rounded-full h-9 w-9 animate-pulse"
-                disabled
-                title={isRecording ? "Recording... Release to send" : "Processing..."}
               >
                 {isProcessing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin" />
                 ) : (
-                  <Mic className="h-4 w-4" />
+                    <Mic className="h-8 w-8" />
                 )}
               </Button>
-            )}
+              </motion.div>
 
-            {input.trim() && !isRecording && !isProcessing && (
+              {/* AI Persona / Settings */}
+              {userId && (
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={handleSend}
                 size="icon"
-                className="rounded-full h-9 w-9"
-                disabled={isLoading || isStreaming || connectionStatus === 'offline'}
-                title={connectionStatus === 'offline' ? 'Waiting for connection...' : 'Send message'}
-              >
-                {isLoading || isStreaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : connectionStatus === 'offline' ? (
-                  <WifiOff className="h-4 w-4" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+                    variant="outline"
+                    onClick={() => setPersonaModalOpen(true)}
+                    className="rounded-full h-12 w-12 bg-white dark:bg-black border-border shadow-lg text-muted-foreground hover:text-accent hover:border-accent/50 transition-all"
+                    disabled={isRecording || isProcessing}
+                  >
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-accent opacity-80" />
+                  </Button>
+                </motion.div>
+              )}
+            </div>
             )}
 
-            {isStreaming && (
-              <motion.button
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={cancelStreaming}
-                className="text-xs font-medium px-2 py-1.5 rounded-full bg-red-100 dark:bg-red-950/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-950/20"
+          {/* Hint Text */}
+          {!isRecording && !isProcessing && !showTextInput && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full"
               >
-                Cancel
-              </motion.button>
+              Hold to Speak
+            </motion.p>
             )}
-          </div>
         </div>
       </div>
     </div>
