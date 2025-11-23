@@ -7,6 +7,7 @@ import { getUserId } from "@/lib/storage";
 import { Calendar, AlertCircle, MapPin, CheckCircle2, Circle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { timezoneService } from "@/lib/timezone";
+import { differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 
 export const DailyBriefing = () => {
   const userId = getUserId();
@@ -30,19 +31,18 @@ export const DailyBriefing = () => {
       .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
   }, [tasks]);
 
-  // Filter for today's events
-  const todayEvents = useMemo(() => {
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+  // Filter for upcoming events (next 4)
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
 
     return events
       .filter(event => {
         const eventDate = new Date(event.date);
-        return eventDate >= startOfDay && eventDate <= endOfDay;
+        // Filter for future events
+        return eventDate >= now;
       })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 4);
   }, [events]);
 
   // Filter for pending high-priority tasks or due today (excluding overdue)
@@ -76,12 +76,12 @@ export const DailyBriefing = () => {
     return "Good evening";
   }, []);
 
-  if (todayEvents.length === 0 && priorityTasks.length === 0 && overdueTasks.length === 0) {
+  if (upcomingEvents.length === 0 && priorityTasks.length === 0 && overdueTasks.length === 0) {
     return (
       <div className="p-8 text-center space-y-3 bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-border mx-4 mt-8">
         <h2 className="text-3xl font-bold text-primary">{greeting}!</h2>
         <p className="text-muted-foreground text-lg">
-          No plans for today.
+          No upcoming events or tasks.
           <br />
           <span className="text-sm opacity-70">Enjoy your freedom! 🌿</span>
         </p>
@@ -150,19 +150,19 @@ export const DailyBriefing = () => {
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           <Calendar className="h-4 w-4 text-primary" />
-          <span>Schedule</span>
+          <span>Upcoming Events</span>
         </div>
         
         <div className="space-y-4 relative pl-2">
             {/* Clean Line */}
             <div className="absolute left-[19px] top-2 bottom-2 w-[2px] bg-border z-0" />
 
-            {todayEvents.length === 0 ? (
+            {upcomingEvents.length === 0 ? (
                 <div className="pl-12 py-3 text-sm text-muted-foreground/60 italic">
-                    Nothing on the calendar.
+                    No upcoming events.
                 </div>
             ) : (
-                todayEvents.map((event, idx) => {
+                upcomingEvents.map((event, idx) => {
                     const isPast = new Date(event.endDate || event.date) < new Date();
                     const isNow = new Date(event.date) <= new Date() && new Date(event.endDate || event.date) >= new Date();
                     
@@ -198,8 +198,27 @@ export const DailyBriefing = () => {
                                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                             <div className="flex items-center gap-1 font-medium text-primary/80">
                                                 <Clock className="h-3 w-3" />
-                                                {timezoneService.formatTime(event.date)}
-                                                {event.endDate && ` - ${timezoneService.formatTime(event.endDate)}`}
+                                                {(() => {
+                                                  const eventDate = new Date(event.date);
+                                                  const now = new Date();
+                                                  const diffDays = differenceInDays(eventDate, now);
+                                                  const diffHours = differenceInHours(eventDate, now);
+                                                  const diffMinutes = differenceInMinutes(eventDate, now);
+                                                  
+                                                  if (diffDays >= 10) {
+                                                    return timezoneService.formatDate(eventDate);
+                                                  }
+                                                  if (diffDays > 0) {
+                                                    return `in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+                                                  }
+                                                  if (diffHours > 0) {
+                                                    return `in ${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+                                                  }
+                                                  if (diffMinutes > 0) {
+                                                    return `in ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+                                                  }
+                                                  return "Now";
+                                                })()}
                                             </div>
                                             
                                             {event.location && (
