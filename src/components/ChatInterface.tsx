@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, AlertCircle, Wifi, WifiOff, Sparkles, ChevronUp, Keyboard, Mic, History, X, ArrowUp } from "lucide-react";
+import { Send, Loader2, AlertCircle, Wifi, WifiOff, Sparkles, ChevronUp, Keyboard, History, X, ArrowUp } from "lucide-react";
 import { TaskPreview } from "@/components/TaskPreview";
 import { EventPreview } from "@/components/EventPreview";
 import { StreamingProgress } from "@/components/StreamingProgress";
@@ -16,6 +16,7 @@ import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 import { MatrixAvatar, AvatarState } from "./MatrixAvatar";
 import { PersonaModal } from "./PersonaModal";
+import { GlowingMicrophone } from "./GlowingMicrophone";
 
 interface Message extends ChatMessage {
   tasks?: Array<{
@@ -304,12 +305,12 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">
-      {/* Connection Status Bar */}
+    <div className="flex flex-col h-full overflow-hidden relative bg-gradient-to-b from-background via-background to-background/80">
+      {/* Connection Status Bar - Glassmorphic */}
       {connectionStatus !== 'online' && (
-        <div className={`flex-shrink-0 px-4 py-2 text-sm flex items-center gap-2 ${connectionStatus === 'offline'
-            ? 'bg-destructive text-destructive-foreground'
-            : 'bg-yellow-500 text-white'
+        <div className={`flex-shrink-0 px-4 py-3 text-sm flex items-center gap-2 backdrop-blur-xl border-b border-border/50 ${connectionStatus === 'offline'
+            ? 'bg-destructive/20 text-destructive-foreground dark:text-destructive border-destructive/30'
+            : 'bg-yellow-500/20 text-yellow-900 dark:text-yellow-200 border-yellow-500/30'
           }`}>
           {connectionStatus === 'offline' ? (
             <>
@@ -327,7 +328,10 @@ export const ChatInterface = () => {
 
       <div
         ref={scrollAreaRef}
-        className="chat-scroll-area flex-1 min-h-0 p-4 relative"
+        className="chat-scroll-area flex-1 min-h-0 p-4 relative backdrop-blur-sm"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%)',
+        }}
       >
         {/* Matrix Avatar Background - Only show in chat history mode */}
         {showChatHistory && (
@@ -407,12 +411,12 @@ export const ChatInterface = () => {
           {showChatHistory && (
             <>
               {/* Back to today button */}
-              <div className="flex justify-between items-center sticky top-0 z-50 bg-background/80 backdrop-blur-md p-2 -mx-2 rounded-b-xl">
+              <div className="flex justify-between items-center sticky top-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border/30 p-3 -mx-4 px-4 rounded-b-2xl shadow-lg">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowChatHistory(false)}
-                  className="text-primary font-medium"
+                  className="text-primary font-medium hover:bg-primary/10"
                 >
                   <ChevronUp className="h-4 w-4 mr-1" />
                   Back to Briefing
@@ -421,10 +425,10 @@ export const ChatInterface = () => {
 
           {/* Show load more button if there are more messages */}
           {messagesToShow < allMessages.length && (
-            <div className="text-center py-2">
+            <div className="text-center py-4">
               <button
                 onClick={() => setMessagesToShow(prev => Math.min(prev + 10, allMessages.length))}
-                    className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground glass-panel px-4 py-2 rounded-full transition-colors"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 backdrop-blur-xl bg-background/40 border border-border/50 px-4 py-2 rounded-full transition-all hover:border-primary/50"
               >
                 <ChevronUp className="h-3 w-3" />
                 <span>Load older messages ({allMessages.length - messagesToShow} hidden)</span>
@@ -449,14 +453,14 @@ export const ChatInterface = () => {
                       {isLastAIMessage ? (
                         <div className="min-h-[70svh] flex items-start max-w-[85%]">
                           <div
-                            className={`rounded-2xl px-4 py-3 w-full shadow-sm ${
+                            className={`rounded-3xl px-5 py-4 w-full shadow-xl backdrop-blur-xl border transition-all ${
                               message.role === "user"
-                                ? "bg-primary text-primary-foreground shadow-primary/20"
+                                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
                                 : message.error
-                                  ? "bg-destructive/10 border border-destructive/20"
+                                  ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
                                   : (message as any).isStreaming
-                                    ? "p-4 bg-card border"
-                                    : "bg-card border"
+                                    ? "bg-background/40 border-border/50 shadow-lg"
+                                    : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
                             }`}
                           >
                             {message.isLoading ? (
@@ -534,14 +538,14 @@ export const ChatInterface = () => {
                         </div>
                       ) : (
                         <div
-                          className={`rounded-2xl px-4 py-3 max-w-[85%] shadow-sm ${
+                          className={`rounded-3xl px-5 py-4 max-w-[85%] shadow-xl backdrop-blur-xl border transition-all ${
                             message.role === "user"
-                              ? "bg-primary text-primary-foreground shadow-primary/20"
+                              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
                               : message.error
-                                ? "bg-destructive/10 border border-destructive/20"
+                                ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
                                 : (message as any).isStreaming
-                                  ? "p-4 bg-card border"
-                                  : "bg-card border"
+                                  ? "bg-background/40 border-border/50 shadow-lg"
+                                  : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
                           }`}
                         >
                           {message.isLoading ? (
@@ -643,13 +647,13 @@ export const ChatInterface = () => {
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
                 className="w-full max-w-md"
               >
-                <div className="glass-panel rounded-3xl p-2 pl-4 flex gap-2 items-center shadow-xl border border-primary/20 bg-white/90 dark:bg-black/90">
+                <div className="backdrop-blur-xl rounded-3xl p-3 pl-5 flex gap-2 items-center shadow-2xl border border-border/50 bg-background/60 hover:bg-background/70 hover:border-border/80 transition-all">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                     placeholder="What's on your mind?"
-                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-10"
+                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-10 text-foreground"
               disabled={isLoading || isStreaming || isRecording || isProcessing}
                     autoFocus
                   />
@@ -657,14 +661,14 @@ export const ChatInterface = () => {
                     size="icon"
                     variant="ghost"
                     onClick={() => setShowTextInput(false)}
-                    className="rounded-full h-10 w-10 text-muted-foreground hover:text-foreground"
+                    className="rounded-full h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-primary/10"
                   >
                     <X className="h-5 w-5" />
                   </Button>
                   <Button
                     onClick={handleSend}
                     size="icon"
-                    className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-glow hover:shadow-glow-accent transition-all"
+                    className="rounded-full h-10 w-10 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
                     disabled={isLoading || isStreaming || connectionStatus === 'offline' || !input.trim()}
                   >
                     {isLoading || isStreaming ? (
@@ -687,51 +691,22 @@ export const ChatInterface = () => {
                   size="icon"
                   variant="outline"
                   onClick={() => setShowTextInput(true)}
-                  className="rounded-full h-12 w-12 bg-white dark:bg-black border-border shadow-lg text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
+                  className="rounded-full h-12 w-12 bg-background/60 backdrop-blur-xl border-border/50 shadow-xl text-muted-foreground hover:text-primary hover:bg-background/80 hover:border-primary/50 transition-all"
                   disabled={isRecording || isProcessing}
                 >
                   <Keyboard className="h-5 w-5" />
                 </Button>
               </motion.div>
 
-              {/* Big Mic */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative"
-              >
-                {/* Ripple Effect when recording */}
-                {isRecording && (
-                   <motion.div
-                     initial={{ opacity: 0.5, scale: 1 }}
-                     animate={{ opacity: 0, scale: 2 }}
-                     transition={{ repeat: Infinity, duration: 1.5 }}
-                     className="absolute inset-0 rounded-full bg-destructive/50 z-[-1]"
-                   />
-                )}
-
-              <Button
+              {/* Glowing Microphone */}
+              <GlowingMicrophone
+                isRecording={isRecording}
+                isProcessing={isProcessing}
+                disabled={isLoading || isStreaming || connectionStatus === 'offline'}
                 onPointerDown={handleMicPress}
                 onTouchStart={handleMicPress}
                 onContextMenu={(e) => e.preventDefault()}
-                size="icon"
-                  className={`rounded-full h-20 w-20 shadow-2xl transition-all border-4 border-background ${
-                    isRecording
-                      ? 'bg-destructive hover:bg-destructive text-white shadow-destructive/40'
-                      : isProcessing
-                        ? 'bg-primary text-white animate-pulse'
-                        : 'bg-primary text-white shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-1'
-                  }`}
-                style={{ touchAction: 'none', WebkitTouchCallout: 'none' }}
-                disabled={isLoading || isStreaming || connectionStatus === 'offline'}
-              >
-                {isProcessing ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                ) : (
-                    <Mic className="h-8 w-8" />
-                )}
-              </Button>
-              </motion.div>
+              />
 
               {/* AI Persona / Settings */}
               {userId && (
@@ -740,10 +715,10 @@ export const ChatInterface = () => {
                 size="icon"
                     variant="outline"
                     onClick={() => setPersonaModalOpen(true)}
-                    className="rounded-full h-12 w-12 bg-white dark:bg-black border-border shadow-lg text-muted-foreground hover:text-accent hover:border-accent/50 transition-all"
+                    className="rounded-full h-12 w-12 bg-background/60 backdrop-blur-xl border-border/50 shadow-xl text-muted-foreground hover:text-accent hover:bg-background/80 hover:border-accent/50 transition-all"
                     disabled={isRecording || isProcessing}
                   >
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-accent opacity-80" />
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 opacity-80 shadow-lg" />
                   </Button>
                 </motion.div>
               )}

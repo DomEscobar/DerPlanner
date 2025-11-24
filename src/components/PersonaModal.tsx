@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Sparkles, Save, Share2, Copy, Check, Info, Bell, BellOff } from "lucide-react";
+import { Sparkles, Save, Share2, Copy, Check, Info, Bell, BellOff, Moon, Sun, Monitor, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPersona, savePersona, getAlarmSettings, saveAlarmSettings, type AlarmSettings, savePushSubscription } from "@/lib/storage";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { chatApi } from "@/lib/api";
 import { isPushSupported, urlBase64ToUint8Array, serializePushSubscription, getExistingSubscription } from "@/lib/push-utils";
+import { useTheme, type ThemeMode } from "@/hooks/useTheme";
 
 interface PersonaModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ export const PersonaModal = ({
   const [copiedInfo, setCopiedInfo] = useState(false);
   const [alarmSettings, setAlarmSettings] = useState<AlarmSettings>(getAlarmSettings());
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -136,9 +138,10 @@ export const PersonaModal = ({
           
           // If no subscription exists, create one
           if (!subscription) {
+            const key = urlBase64ToUint8Array(vapidPublicKey);
             subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+              applicationServerKey: key as BufferSource
             });
           }
           
@@ -236,14 +239,14 @@ export const PersonaModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col backdrop-blur-xl bg-background/95 border-border/50">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b flex-shrink-0 backdrop-blur-sm">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            AI Configuration
+            <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            Preferences
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            Customize AI behavior and share this conversation
+            Customize your AI assistant, appearance, and notifications
           </DialogDescription>
         </DialogHeader>
 
@@ -251,12 +254,11 @@ export const PersonaModal = ({
           <TabsList className="mx-4 sm:mx-6 mt-3 grid w-auto grid-cols-3 h-9 sm:h-10 flex-shrink-0">
             <TabsTrigger value="persona" className="text-xs sm:text-sm">
               <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Persona</span>
-              <span className="xs:hidden">AI</span>
+              AI
             </TabsTrigger>
-            <TabsTrigger value="alarm" className="text-xs sm:text-sm">
-              <Bell className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Alarm
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              Settings
             </TabsTrigger>
             <TabsTrigger value="share" className="text-xs sm:text-sm">
               <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -309,18 +311,63 @@ export const PersonaModal = ({
           </TabsContent>
 
           <TabsContent 
-            value="alarm" 
-            className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 mt-4 space-y-4"
+            value="settings" 
+            className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 mt-4 space-y-6"
           >
-            <div className="space-y-4">
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
-                <Info className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-purple-900 dark:text-purple-200">
-                  Get push notifications before your events start. Works even when the app is closed.
-                </p>
+            {/* Theme Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sun className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Appearance</h3>
               </div>
+              
+              <div className="grid grid-cols-3 gap-2 p-2 rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-all ${
+                    theme === 'light'
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-background/60 hover:bg-background/80 border border-border/50'
+                  }`}
+                >
+                  <Sun className="h-5 w-5" />
+                  <span className="text-xs font-medium">Light</span>
+                </button>
+                
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-all ${
+                    theme === 'dark'
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-background/60 hover:bg-background/80 border border-border/50'
+                  }`}
+                >
+                  <Moon className="h-5 w-5" />
+                  <span className="text-xs font-medium">Dark</span>
+                </button>
+                
+                <button
+                  onClick={() => setTheme('auto')}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-all ${
+                    theme === 'auto'
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-background/60 hover:bg-background/80 border border-border/50'
+                  }`}
+                >
+                  <Monitor className="h-5 w-5" />
+                  <span className="text-xs font-medium">Auto</span>
+                </button>
+              </div>
+            </div>
 
-              <div className="space-y-6 p-4 rounded-lg border bg-card">
+            {/* Notifications Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Notifications</h3>
+              </div>
+              
+              <div className="space-y-4 p-4 rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label htmlFor="alarm-enabled" className="text-sm font-semibold flex items-center gap-2">
@@ -332,7 +379,7 @@ export const PersonaModal = ({
                       Event Alarms
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Receive notifications before events
+                      Get notified before events start
                     </p>
                   </div>
                   <Switch
@@ -346,9 +393,9 @@ export const PersonaModal = ({
 
                 {alarmSettings.enabled && (
                   <>
-                    <div className="space-y-2 pt-2 border-t">
+                    <div className="space-y-2 pt-3 border-t border-border/50">
                       <Label htmlFor="minutes-before" className="text-sm font-medium">
-                        Notification Time
+                        Notify me
                       </Label>
                       <Select
                         value={alarmSettings.minutesBefore.toString()}
@@ -369,12 +416,9 @@ export const PersonaModal = ({
                           <SelectItem value="1440">1 day before</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">
-                        When to notify you before an event starts
-                      </p>
                     </div>
 
-                    <div className="space-y-3 pt-2 border-t">
+                    <div className="space-y-3 pt-3 border-t border-border/50">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <Label htmlFor="show-notification" className="text-sm font-medium">
@@ -396,7 +440,7 @@ export const PersonaModal = ({
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <Label htmlFor="sound-enabled" className="text-sm font-medium">
-                            Notification Sound
+                            Sound
                           </Label>
                           <p className="text-xs text-muted-foreground">
                             Play sound with notifications
@@ -415,75 +459,59 @@ export const PersonaModal = ({
                     {notificationPermission !== 'granted' && (
                       <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
                         <p className="text-xs text-amber-900 dark:text-amber-200">
-                          ⚠️ Notification permission is required. Click "Save Settings" to request permission.
+                          ⚠️ Permission required. Click "Save Settings" below to enable.
                         </p>
                       </div>
                     )}
 
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        onClick={handleTestNotification} 
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
-                        <Bell className="h-4 w-4 mr-2" />
-                        Test Notification
-                      </Button>
-                    </div>
+                    <Button 
+                      onClick={handleTestNotification} 
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Test Notification
+                    </Button>
                   </>
                 )}
               </div>
+            </div>
 
-              <div className="flex justify-end pt-4 border-t">
-                <Button 
-                  onClick={handleSaveAlarmSettings}
-                  className="w-full sm:w-auto"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Settings
-                </Button>
-              </div>
+            {/* Save Button */}
+            <div className="flex justify-end pt-2 border-t border-border/50">
+              <Button 
+                onClick={handleSaveAlarmSettings}
+                className="w-full sm:w-auto"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Settings
+              </Button>
             </div>
           </TabsContent>
+
 
           <TabsContent 
             value="share" 
             className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 mt-4 space-y-4"
           >
             <div className="space-y-4">
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-900 dark:text-blue-200">
-                  Share this conversation with others to collaborate in real-time. They'll see all chat history, tasks, and events with full context.
-                </p>
+              <div className="flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Share & Collaborate</h3>
               </div>
 
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800 space-y-3">
-                <div className="flex items-start gap-2">
-                  <Share2 className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-1">
-                      Shareable Conversation Link
-                    </h4>
-                    <p className="text-xs text-orange-800/80 dark:text-orange-200/80 mb-3">
-                      This unique URL gives anyone instant access to:
-                    </p>
-                    <ul className="text-xs text-orange-800/80 dark:text-orange-200/80 space-y-1 mb-3 ml-4">
-                      <li>• Full chat history and AI responses</li>
-                      <li>• All tasks created in this conversation</li>
-                      <li>• All events and meetings scheduled</li>
-                      <li>• Ability to continue the conversation</li>
-                      <li>• Permission to create new tasks/events</li>
-                    </ul>
-                    <p className="text-xs text-orange-800/80 dark:text-orange-200/80">
-                      No login required—they can join immediately by clicking the link.
-                    </p>
-                  </div>
-                </div>
+              <p className="text-sm text-muted-foreground">
+                Share this conversation to collaborate in real-time. Anyone with the link can view history, tasks, events, and continue the conversation.
+              </p>
+
+              <div className="space-y-3 p-4 rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Conversation Link
+                </Label>
                 
-                <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-orange-200 dark:border-orange-700">
-                  <div className="flex-1 p-3 rounded-lg border bg-white dark:bg-gray-950 font-mono text-xs break-all overflow-x-auto scrollbar-thin">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1 p-3 rounded-lg border border-border/50 bg-background/60 backdrop-blur-sm font-mono text-xs break-all overflow-x-auto">
                     {generateShareUrl()}
                   </div>
                   <Button 
@@ -500,24 +528,22 @@ export const PersonaModal = ({
                     ) : (
                       <>
                         <Copy className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Copy Link</span>
-                        <span className="sm:hidden">Copy</span>
+                        Copy Link
                       </>
                     )}
                   </Button>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                <p className="text-xs text-green-900 dark:text-green-200 font-medium mb-2">
-                  💡 Perfect for:
-                </p>
-                <ul className="text-xs text-green-800/80 dark:text-green-200/80 space-y-1 ml-4">
-                  <li>• Team collaboration and planning</li>
-                  <li>• Project updates with stakeholders</li>
-                  <li>• Client presentations and proposals</li>
-                  <li>• Cross-department coordination</li>
-                </ul>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs font-semibold text-primary mb-1">✨ Full Access</p>
+                  <p className="text-xs text-muted-foreground">Chat, tasks, events</p>
+                </div>
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs font-semibold text-primary mb-1">🔓 No Login</p>
+                  <p className="text-xs text-muted-foreground">Instant collaboration</p>
+                </div>
               </div>
             </div>
           </TabsContent>

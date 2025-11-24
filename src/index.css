@@ -135,18 +135,28 @@
 
 /* Utilities for the new design */
 @layer utilities {
-  /* Floating glass effect - more subtle */
+  /* Glassmorphic panel */
   .glass-panel {
-    @apply bg-white/70 dark:bg-black/40 backdrop-blur-lg border border-white/40 dark:border-white/5 shadow-sm;
+    @apply bg-background/40 dark:bg-background/30 backdrop-blur-xl border border-border/50 shadow-lg;
+  }
+  
+  /* Enhanced glassmorphic panel */
+  .glass-panel-enhanced {
+    @apply bg-background/30 dark:bg-background/20 backdrop-blur-2xl border border-border/40 shadow-2xl;
   }
   
   /* Vibrant soft shadows */
   .shadow-glow {
-    @apply shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)];
+    @apply shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)];
   }
   
   .shadow-glow-accent {
-    @apply shadow-[0_0_20px_-5px_rgba(244,63,94,0.2)];
+    @apply shadow-[0_0_30px_-5px_rgba(244,63,94,0.3)];
+  }
+  
+  /* Frosted glass effect */
+  .frosted-glass {
+    @apply bg-background/50 backdrop-blur-md border border-border/40;
   }
 }
 

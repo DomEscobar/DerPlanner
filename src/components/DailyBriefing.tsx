@@ -78,7 +78,7 @@ export const DailyBriefing = () => {
 
   if (upcomingEvents.length === 0 && priorityTasks.length === 0 && overdueTasks.length === 0) {
     return (
-      <div className="p-8 text-center space-y-3 bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-border mx-4 mt-8">
+      <div className="p-8 text-center space-y-3 bg-background/40 dark:bg-background/30 backdrop-blur-xl rounded-3xl border border-border/50 mx-4 mt-8 shadow-lg hover:shadow-xl hover:bg-background/50 transition-all">
         <h2 className="text-3xl font-bold text-primary">{greeting}!</h2>
         <p className="text-muted-foreground text-lg">
           No upcoming events or tasks.
@@ -118,7 +118,7 @@ export const DailyBriefing = () => {
               >
                 <div 
                     onClick={() => toggleTask(task.id)}
-                    className="p-4 rounded-2xl bg-destructive/5 hover:bg-destructive/10 border border-destructive/20 hover:border-destructive/40 transition-all flex items-start gap-3 group cursor-pointer shadow-sm"
+                    className="p-4 rounded-3xl bg-destructive/10 hover:bg-destructive/15 backdrop-blur-md border border-destructive/40 hover:border-destructive/60 transition-all flex items-start gap-3 group cursor-pointer shadow-lg hover:shadow-xl"
                 >
                     <div className="mt-0.5 flex-shrink-0 transition-transform group-hover:scale-110">
                         <Circle className="h-5 w-5 text-destructive group-hover:fill-destructive/20" />
@@ -182,12 +182,12 @@ export const DailyBriefing = () => {
                                 }`} />
                             </div>
 
-                            <Card className={`p-4 transition-all border-0 shadow-sm hover:shadow-md ${
+                            <Card className={`p-4 transition-all backdrop-blur-xl shadow-lg hover:shadow-xl ${
                                 isNow 
-                                    ? 'bg-white dark:bg-white/10 ring-1 ring-primary/20 shadow-glow' 
+                                    ? 'bg-background/50 border border-primary/40 ring-1 ring-primary/20 shadow-glow' 
                                     : isPast 
-                                        ? 'bg-transparent border border-border/50 opacity-60' 
-                                        : 'bg-white/80 dark:bg-white/5 hover:bg-white'
+                                        ? 'bg-background/30 border border-border/30 opacity-60' 
+                                        : 'bg-background/40 border border-border/50 hover:bg-background/60 hover:border-border/80'
                             }`}>
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="space-y-1">
@@ -266,7 +266,7 @@ export const DailyBriefing = () => {
               >
                 <div 
                     onClick={() => toggleTask(task.id)}
-                    className="p-4 rounded-2xl bg-white/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-border/50 hover:border-primary/20 transition-all flex items-start gap-3 group cursor-pointer shadow-sm"
+                    className="p-4 rounded-3xl bg-background/40 hover:bg-background/60 backdrop-blur-md border border-border/50 hover:border-primary/40 transition-all flex items-start gap-3 group cursor-pointer shadow-lg hover:shadow-xl"
                 >
                     {task.status === 'completed' ? (
                         <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
