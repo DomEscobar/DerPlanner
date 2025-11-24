@@ -15,6 +15,8 @@ import { mastra } from './mastra';
 import { streamAgentNetwork } from './routes/stream';
 import { webhookService } from './services/webhook-service';
 import { pushNotificationService } from './services/push-notification-service';
+import integrationsRouter from './routes/integrations';
+import { gmailSyncJob } from './jobs/gmail-sync-job';
 import { WebhookConfigSchema, TaskWebhookConfigSchema } from './types';
 
 // Load environment variables
@@ -2096,6 +2098,9 @@ app.delete('/api/memory/:userId', (req: Request, res: Response) => {
   });
 });
 
+// Mount integrations router
+app.use('/api/integrations', integrationsRouter);
+
 // Error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled error:', err);
@@ -2119,6 +2124,9 @@ const startServer = async () => {
     
     // Start push notification service
     pushNotificationService.start();
+
+    // Start Gmail sync job
+    gmailSyncJob.start();
     
     if (!process.env.OPENAI_API_KEY) {
       console.warn('⚠️  WARNING: OpenAI API key not configured!');
@@ -2141,7 +2149,8 @@ const startServer = async () => {
       console.log(`🔍 Research Agent: POST http://localhost:${PORT}/api/agent/research`);
       console.log(`🎣 Webhook Service: ENABLED`);
       console.log(`🔔 Push Notifications: ${process.env.VAPID_PUBLIC_KEY ? 'ENABLED' : 'DISABLED'}`);
-      console.log(`✅ Server ready with Mastra AI agents + Deep Research + Webhooks + Push Notifications!`);
+      console.log(`📧 Gmail Sync: ${process.env.GOOGLE_CLIENT_ID ? 'ENABLED' : 'DISABLED'}`);
+      console.log(`✅ Server ready with Mastra AI agents + Deep Research + Webhooks + Push Notifications + Calendar Sync!`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -2156,6 +2165,7 @@ process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down...');
   webhookService.stop();
   pushNotificationService.stop();
+  gmailSyncJob.stop();
   process.exit(0);
 });
 
@@ -2163,5 +2173,6 @@ process.on('SIGTERM', () => {
   console.log('\n🛑 Shutting down...');
   webhookService.stop();
   pushNotificationService.stop();
+  gmailSyncJob.stop();
   process.exit(0);
 });

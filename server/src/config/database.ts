@@ -274,6 +274,10 @@ export const initializeDatabase = async (): Promise<void> => {
       CREATE INDEX IF NOT EXISTS idx_events_last_notification ON events(last_notification_sent);
     `);
     
+    // Run migrations
+    console.log('🔄 Running migrations...');
+    await runMigrations(client);
+    
     console.log('✅ Database initialized successfully');
   } catch (error) {
     console.error('❌ Error initializing database:', error);
@@ -294,6 +298,90 @@ export const initializeDatabase = async (): Promise<void> => {
     }
   }
 };
+
+/**
+ * Run database migrations
+ */
+async function runMigrations(client: PoolClient): Promise<void> {
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        executed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    const gmailMigration = await client.query(
+      'SELECT * FROM migrations WHERE name = $1',
+      ['001_create_gmail_integration']
+    );
+
+    if (gmailMigration.rows.length === 0) {
+      console.log('  Running: 001_create_gmail_integration');
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gmail_integrations (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id VARCHAR(255) NOT NULL UNIQUE,
+          access_token TEXT NOT NULL,
+          refresh_token TEXT NOT NULL,
+          expires_at TIMESTAMPTZ,
+          history_id VARCHAR(255),
+          label_filters JSONB DEFAULT '["INBOX"]'::jsonb,
+          last_sync_at TIMESTAMPTZ,
+          sync_status VARCHAR(20) DEFAULT 'idle' CHECK (sync_status IN ('idle', 'syncing', 'error')),
+          sync_error TEXT,
+          watch_expiration TIMESTAMPTZ,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_gmail_user_id ON gmail_integrations(user_id);
+        CREATE INDEX IF NOT EXISTS idx_gmail_sync_status ON gmail_integrations(sync_status);
+        CREATE INDEX IF NOT EXISTS idx_gmail_last_sync ON gmail_integrations(last_sync_at);
+      `);
+
+      await client.query(`
+        ALTER TABLE events ADD COLUMN IF NOT EXISTS
+          sync_source VARCHAR(20) CHECK (sync_source IN ('manual', 'gmail', 'outlook'));
+      `);
+
+      await client.query(`
+        ALTER TABLE events ADD COLUMN IF NOT EXISTS
+          external_id JSONB DEFAULT '{}'::jsonb;
+      `);
+
+      await client.query(`
+        ALTER TABLE events ADD COLUMN IF NOT EXISTS
+          last_external_sync TIMESTAMPTZ;
+      `);
+
+      await client.query(`
+        ALTER TABLE events ADD COLUMN IF NOT EXISTS
+          is_read_only BOOLEAN DEFAULT false;
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_events_sync_source ON events(sync_source);
+        CREATE INDEX IF NOT EXISTS idx_events_external_id ON events USING GIN(external_id);
+        CREATE INDEX IF NOT EXISTS idx_events_user_sync ON events(user_id, sync_source);
+      `);
+
+      await client.query(
+        'INSERT INTO migrations (name) VALUES ($1)',
+        ['001_create_gmail_integration']
+      );
+
+      console.log('  ✅ 001_create_gmail_integration completed');
+    }
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    throw error;
+  }
+}
 
 // Database query helper
 export const query = async (text: string, params?: any[]): Promise<any> => {
