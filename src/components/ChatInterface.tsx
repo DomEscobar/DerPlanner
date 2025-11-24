@@ -244,7 +244,7 @@ export const ChatInterface = () => {
 
     // Request permission first (will show modal only if needed)
     await requestPermission();
-    
+
     // Start recording immediately after permission is granted
     await startRecording();
 
@@ -309,8 +309,8 @@ export const ChatInterface = () => {
       {/* Connection Status Bar - Glassmorphic */}
       {connectionStatus !== 'online' && (
         <div className={`flex-shrink-0 px-4 py-3 text-sm flex items-center gap-2 backdrop-blur-xl border-b border-border/50 ${connectionStatus === 'offline'
-            ? 'bg-destructive/20 text-destructive-foreground dark:text-destructive border-destructive/30'
-            : 'bg-yellow-500/20 text-yellow-900 dark:text-yellow-200 border-yellow-500/30'
+          ? 'bg-destructive/20 text-destructive-foreground dark:text-destructive border-destructive/30'
+          : 'bg-yellow-500/20 text-yellow-900 dark:text-yellow-200 border-yellow-500/30'
           }`}>
           {connectionStatus === 'offline' ? (
             <>
@@ -335,11 +335,11 @@ export const ChatInterface = () => {
       >
         {/* Matrix Avatar Background - Only show in chat history mode */}
         {showChatHistory && (
-        <MatrixAvatar
-          compact={messages.length > 0}
-          state={getAvatarState()}
-          onClick={() => setPersonaModalOpen(true)}
-        />
+          <MatrixAvatar
+            compact={messages.length > 0}
+            state={getAvatarState()}
+            onClick={() => setPersonaModalOpen(true)}
+          />
         )}
 
         {/* Persona Modal */}
@@ -373,7 +373,7 @@ export const ChatInterface = () => {
               transition={{ duration: 0.3 }}
             >
               <DailyBriefing />
-              
+
               {/* Show chat history button - Floating near top right of content */}
               {allMessages.length > 0 && (
                 <div className="flex justify-center pt-4">
@@ -423,23 +423,23 @@ export const ChatInterface = () => {
                 </Button>
               </div>
 
-          {/* Show load more button if there are more messages */}
-          {messagesToShow < allMessages.length && (
-            <div className="text-center py-4">
-              <button
-                onClick={() => setMessagesToShow(prev => Math.min(prev + 10, allMessages.length))}
+              {/* Show load more button if there are more messages */}
+              {messagesToShow < allMessages.length && (
+                <div className="text-center py-4">
+                  <button
+                    onClick={() => setMessagesToShow(prev => Math.min(prev + 10, allMessages.length))}
                     className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 backdrop-blur-xl bg-background/40 border border-border/50 px-4 py-2 rounded-full transition-all hover:border-primary/50"
-              >
-                <ChevronUp className="h-3 w-3" />
-                <span>Load older messages ({allMessages.length - messagesToShow} hidden)</span>
-              </button>
-            </div>
-          )}
+                  >
+                    <ChevronUp className="h-3 w-3" />
+                    <span>Load older messages ({allMessages.length - messagesToShow} hidden)</span>
+                  </button>
+                </div>
+              )}
 
-          <AnimatePresence mode="popLayout">
-            {messages.map((message, index) => {
-              const isLastMessage = index === messages.length - 1;
-              const isLastAIMessage = isLastMessage && message.role === 'assistant';
+              <AnimatePresence mode="popLayout">
+                {messages.map((message, index) => {
+                  const isLastMessage = index === messages.length - 1;
+                  const isLastAIMessage = isLastMessage && message.role === 'assistant';
 
                   return (
                     <motion.div
@@ -453,15 +453,14 @@ export const ChatInterface = () => {
                       {isLastAIMessage ? (
                         <div className="min-h-[70svh] flex items-start max-w-[85%]">
                           <div
-                            className={`rounded-3xl px-5 py-4 w-full shadow-xl backdrop-blur-xl border transition-all ${
-                              message.role === "user"
+                            className={`rounded-3xl px-5 py-4 w-full shadow-xl backdrop-blur-xl border transition-all ${message.role === "user"
                                 ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
                                 : message.error
                                   ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
                                   : (message as any).isStreaming
                                     ? "bg-background/40 border-border/50 shadow-lg"
                                     : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
-                            }`}
+                              }`}
                           >
                             {message.isLoading ? (
                               <div className="flex items-center gap-2">
@@ -538,15 +537,14 @@ export const ChatInterface = () => {
                         </div>
                       ) : (
                         <div
-                          className={`rounded-3xl px-5 py-4 max-w-[85%] shadow-xl backdrop-blur-xl border transition-all ${
-                            message.role === "user"
+                          className={`rounded-3xl px-5 py-4 max-w-[85%] shadow-xl backdrop-blur-xl border transition-all ${message.role === "user"
                               ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
                               : message.error
                                 ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
                                 : (message as any).isStreaming
                                   ? "bg-background/40 border-border/50 shadow-lg"
                                   : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
-                          }`}
+                            }`}
                         >
                           {message.isLoading ? (
                             <div className="flex items-center gap-2">
@@ -625,7 +623,7 @@ export const ChatInterface = () => {
                   );
                 })}
               </AnimatePresence>
-              
+
               <div className="h-24" /> {/* Spacer for bottom input */}
             </>
           )}
@@ -637,7 +635,7 @@ export const ChatInterface = () => {
         className="absolute bottom-6 left-0 right-0 z-40 pointer-events-none flex justify-center"
       >
         <div className="pointer-events-auto max-w-3xl w-full px-4 flex flex-col items-center gap-4">
-          
+
           {/* Text Input Mode - Slide up */}
           <AnimatePresence>
             {showTextInput && (
@@ -648,13 +646,13 @@ export const ChatInterface = () => {
                 className="w-full max-w-md"
               >
                 <div className="backdrop-blur-xl rounded-3xl p-3 pl-5 flex gap-2 items-center shadow-2xl border border-border/50 bg-background/60 hover:bg-background/70 hover:border-border/80 transition-all">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                     placeholder="What's on your mind?"
                     className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-10 text-foreground"
-              disabled={isLoading || isStreaming || isRecording || isProcessing}
+                    disabled={isLoading || isStreaming || isRecording || isProcessing}
                     autoFocus
                   />
                   <Button
@@ -711,8 +709,8 @@ export const ChatInterface = () => {
               {/* AI Persona / Settings */}
               {userId && (
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                size="icon"
+                  <Button
+                    size="icon"
                     variant="outline"
                     onClick={() => setPersonaModalOpen(true)}
                     className="rounded-full h-12 w-12 bg-background/60 backdrop-blur-xl border-border/50 shadow-xl text-muted-foreground hover:text-accent hover:bg-background/80 hover:border-accent/50 transition-all"
@@ -723,18 +721,8 @@ export const ChatInterface = () => {
                 </motion.div>
               )}
             </div>
-            )}
+          )}
 
-          {/* Hint Text */}
-          {!isRecording && !isProcessing && !showTextInput && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full"
-              >
-              Hold to Speak
-            </motion.p>
-            )}
         </div>
       </div>
     </div>
