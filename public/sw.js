@@ -1,4 +1,4 @@
-const VERSION = '2.0.0'; // Glassmorphic Design v2
+const VERSION = '2.0.1'; // Glassmorphic Design v2.0.1
 const CACHE_NAME = `derplanner-${VERSION}`;
 const RUNTIME_CACHE = `derplanner-runtime-${VERSION}`;
 const ASSET_CACHE = `derplanner-assets-${VERSION}`;

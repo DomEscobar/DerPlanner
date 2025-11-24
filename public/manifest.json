@@ -1,7 +1,8 @@
 {
     "name": "DerPlanner - AI Task & Event Planner",
     "short_name": "DerPlanner",
-    "description": "Your intelligent AI assistant for organizing tasks and events with beautiful glassmorphic interface",
+    "version": "2.0.1",
+    "description": "Your intelligent AI assistant for organizing tasks and events",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
