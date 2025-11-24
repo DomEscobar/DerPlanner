@@ -7,6 +7,7 @@ import { EventPreview } from "@/components/EventPreview";
 import { StreamingProgress } from "@/components/StreamingProgress";
 import { MicrophonePermissionModal } from "@/components/MicrophonePermissionModal";
 import { DailyBriefing } from "@/components/DailyBriefing";
+import { WelcomeView } from "@/components/WelcomeView";
 import { useChat, ChatMessage } from "@/hooks/useChat";
 import { useStreamingChat } from "@/hooks/useStreamingChat";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -306,6 +307,16 @@ export const ChatInterface = () => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative bg-gradient-to-b from-background via-background to-background/80">
+
+      {/* Matrix Avatar Background - Only show in chat history mode */}
+      {showChatHistory && (
+        <MatrixAvatar
+          compact={messages.length > 0}
+          state={getAvatarState()}
+          onClick={() => setPersonaModalOpen(true)}
+        />
+      )}
+
       {/* Connection Status Bar - Glassmorphic */}
       {connectionStatus !== 'online' && (
         <div className={`flex-shrink-0 px-4 py-3 text-sm flex items-center gap-2 backdrop-blur-xl border-b border-border/50 ${connectionStatus === 'offline'
@@ -333,14 +344,7 @@ export const ChatInterface = () => {
           backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%)',
         }}
       >
-        {/* Matrix Avatar Background - Only show in chat history mode */}
-        {showChatHistory && (
-          <MatrixAvatar
-            compact={messages.length > 0}
-            state={getAvatarState()}
-            onClick={() => setPersonaModalOpen(true)}
-          />
-        )}
+
 
         {/* Persona Modal */}
         {userId && (
@@ -364,8 +368,13 @@ export const ChatInterface = () => {
         />
 
         <div className="max-w-3xl mx-auto space-y-4 relative z-10">
-          {/* Daily Briefing - Show by default */}
-          {!showChatHistory && !isLoadingHistory && (
+          {/* Welcome View for new users */}
+          {!showChatHistory && !isLoadingHistory && allMessages.length === 0 && (
+            <WelcomeView />
+          )}
+
+          {/* Daily Briefing - Show when there is history */}
+          {!showChatHistory && !isLoadingHistory && allMessages.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -375,19 +384,17 @@ export const ChatInterface = () => {
               <DailyBriefing />
 
               {/* Show chat history button - Floating near top right of content */}
-              {allMessages.length > 0 && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowChatHistory(true)}
-                    className="text-muted-foreground hover:text-primary text-xs"
-                  >
-                    <History className="h-3 w-3 mr-1.5" />
-                    Recent activity ({allMessages.length})
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowChatHistory(true)}
+                  className="text-muted-foreground hover:text-primary text-xs"
+                >
+                  <History className="h-3 w-3 mr-1.5" />
+                  Recent activity ({allMessages.length})
+                </Button>
+              </div>
             </motion.div>
           )}
 
@@ -410,18 +417,6 @@ export const ChatInterface = () => {
           {/* Chat History */}
           {showChatHistory && (
             <>
-              {/* Back to today button */}
-              <div className="flex justify-between items-center sticky top-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border/30 p-3 -mx-4 px-4 rounded-b-2xl shadow-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowChatHistory(false)}
-                  className="text-primary font-medium hover:bg-primary/10"
-                >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Back to Briefing
-                </Button>
-              </div>
 
               {/* Show load more button if there are more messages */}
               {messagesToShow < allMessages.length && (
@@ -454,12 +449,12 @@ export const ChatInterface = () => {
                         <div className="min-h-[70svh] flex items-start max-w-[85%]">
                           <div
                             className={`rounded-3xl px-5 py-4 w-full shadow-xl backdrop-blur-xl border transition-all ${message.role === "user"
-                                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
-                                : message.error
-                                  ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
-                                  : (message as any).isStreaming
-                                    ? "bg-background/40 border-border/50 shadow-lg"
-                                    : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
+                              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
+                              : message.error
+                                ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
+                                : (message as any).isStreaming
+                                  ? "bg-background/40 border-border/50 shadow-lg"
+                                  : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
                               }`}
                           >
                             {message.isLoading ? (
@@ -497,22 +492,6 @@ export const ChatInterface = () => {
                                           : JSON.stringify(message.content, null, 2)}
                                       </ReactMarkdown>
                                     </div>
-                                    {(message as any).steps && (message as any).steps.length > 0 && (
-                                      <div className="mt-4 pt-4 border-t border-border/50">
-                                        <details className="group">
-                                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
-                                            <Sparkles className="h-3 w-3" />
-                                            <span>View execution steps ({(message as any).steps.length})</span>
-                                          </summary>
-                                          <div className="mt-3">
-                                            <StreamingProgress
-                                              steps={(message as any).steps}
-                                              isComplete={true}
-                                            />
-                                          </div>
-                                        </details>
-                                      </div>
-                                    )}
                                   </>
                                 )}
                                 {message.error && (
@@ -538,12 +517,12 @@ export const ChatInterface = () => {
                       ) : (
                         <div
                           className={`rounded-3xl px-5 py-4 max-w-[85%] shadow-xl backdrop-blur-xl border transition-all ${message.role === "user"
-                              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
-                              : message.error
-                                ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
-                                : (message as any).isStreaming
-                                  ? "bg-background/40 border-border/50 shadow-lg"
-                                  : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
+                            ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 border-primary/40"
+                            : message.error
+                              ? "bg-destructive/15 border-destructive/40 backdrop-blur-xl shadow-destructive/20"
+                              : (message as any).isStreaming
+                                ? "bg-background/40 border-border/50 shadow-lg"
+                                : "bg-background/40 border-border/50 shadow-lg hover:shadow-xl hover:bg-background/50"
                             }`}
                         >
                           {message.isLoading ? (

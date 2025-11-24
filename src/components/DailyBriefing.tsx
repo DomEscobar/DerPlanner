@@ -59,7 +59,7 @@ export const DailyBriefing = () => {
         // Exclude if it's already counted as overdue
         if (task.dueDate && new Date(task.dueDate) < startOfDay) return false;
 
-        const isHighPriority = task.priority === 'high' || task.priority === 'urgent';
+        const isHighPriority = task.priority === 'high';
         const isDueToday = task.dueDate && 
           new Date(task.dueDate) >= startOfDay && 
           new Date(task.dueDate) <= endOfDay;
@@ -279,9 +279,6 @@ export const DailyBriefing = () => {
                             {task.text}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
-                            {task.priority === 'urgent' && (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 h-5">Urgent</Badge>
-                            )}
                             {task.priority === 'high' && (
                                 <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-transparent hover:bg-orange-200 text-[10px] px-1.5 h-5">High</Badge>
                             )}

@@ -36,72 +36,48 @@ export const StreamingProgress = ({ steps, currentMessage, isComplete }: Streami
     }
   }, [isComplete]);
 
-  // Get only the last 3 steps to avoid clutter
-  const displaySteps = steps.slice(-3);
-  const lastStep = steps[steps.length - 1];
+  // For ADHD users, we want to show a simplified "Processing..." state 
+  // rather than a complex technical breakdown of agents and steps.
+  const activeStep = steps.find(s => s.status === 'in_progress') || steps[steps.length - 1];
+
+  if (!activeStep && !isComplete) return null;
 
   return (
     <div className="space-y-2">
-      {/* Compact Timeline */}
-      <div className="space-y-1.5">
-        <AnimatePresence mode="popLayout">
-          {displaySteps.map((step, index) => (
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3 p-2 rounded-xl bg-primary/5 border border-primary/10"
+      >
+        <div className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          {!isComplete ? (
             <motion.div
-              key={step.number}
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 text-xs"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
-              {/* Status Icon */}
-              <div className="relative flex-shrink-0 w-4 h-4 flex items-center justify-center">
-                {step.status === 'in_progress' && (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Loader2 className="h-3.5 w-3.5 text-purple-500" />
-                  </motion.div>
-                )}
-                {step.status === 'completed' && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                )}
-                {step.status === 'pending' && (
-                  <Circle className="h-3 w-3 text-muted-foreground/40" />
-                )}
-                {step.status === 'error' && (
-                  <Circle className="h-3.5 w-3.5 text-red-500 fill-red-500/30" />
-                )}
-              </div>
-
-              {/* Agent and Action */}
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                <span className="font-medium text-foreground/80 whitespace-nowrap flex items-center gap-1">
-                  {agentIcons[step.agent] || <Zap className="h-2.5 w-2.5" />}
-                  {step.agent}
-                </span>
-                <span className="text-muted-foreground truncate">
-                  {step.action}
-                </span>
-              </div>
-
-              {/* Active Indicator */}
-              {step.status === 'in_progress' && (
-                <motion.div
-                  animate={{ opacity: [0.5, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="text-[10px] font-medium text-purple-500 whitespace-nowrap"
-                >
-                  processing
-                </motion.div>
-              )}
+              <Loader2 className="h-4 w-4 text-primary" />
             </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+          ) : (
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          )}
+        </div>
 
-      {/* Progress Bar */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground/90">
+            {isComplete ? "Done!" : "Thinking..."}
+          </p>
+          {!isComplete && activeStep && (
+            <p className="text-xs text-muted-foreground truncate">
+               {activeStep.agent === 'RoutingAgent' ? 'Understanding request...' : 
+                activeStep.agent === 'TaskManager' ? 'Organizing tasks...' :
+                activeStep.agent === 'EventManager' ? 'Scheduling events...' :
+                'Working on it...'}
+            </p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Simplified Progress Bar */}
       {!isComplete && steps.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}

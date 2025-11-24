@@ -1343,7 +1343,7 @@ const DayCell = ({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
       onTouchMove={handleTouchMove}
-      className={`min-h-28 sm:min-h-32 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all flex flex-col select-none ${
+      className={`min-h-28 sm:min-h-32 p-2 sm:p-3 border-1 cursor-pointer transition-all flex flex-col select-none ${
         isPressed
           ? "border-blue-400 bg-blue-100 dark:bg-blue-900 scale-[0.98]"
           : isSelected
