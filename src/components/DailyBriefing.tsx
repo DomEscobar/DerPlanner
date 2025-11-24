@@ -69,17 +69,10 @@ export const DailyBriefing = () => {
       .slice(0, 5);
   }, [tasks]);
 
-  const greeting = useMemo(() => {
-    const hour = today.getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  }, []);
 
   if (upcomingEvents.length === 0 && priorityTasks.length === 0 && overdueTasks.length === 0) {
     return (
       <div className="p-8 text-center space-y-3 bg-background/40 dark:bg-background/30 backdrop-blur-xl rounded-3xl border border-border/50 mx-4 mt-8 shadow-lg hover:shadow-xl hover:bg-background/50 transition-all">
-        <h2 className="text-3xl font-bold text-primary">{greeting}!</h2>
         <p className="text-muted-foreground text-lg">
           No upcoming events or tasks.
           <br />
@@ -91,14 +84,6 @@ export const DailyBriefing = () => {
 
   return (
     <div className="space-y-8 pb-24 px-4 pt-6"> {/* Added bottom padding for floating UI */}
-      <div className="space-y-1">
-        <h2 className="text-4xl font-bold tracking-tight text-foreground">
-            {greeting}
-        </h2>
-        <p className="text-xl text-muted-foreground font-medium">
-          {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </p>
-      </div>
 
       {/* Overdue Tasks - "Catch Up" Section */}
       {overdueTasks.length > 0 && (
